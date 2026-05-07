@@ -7,7 +7,10 @@ export default function LogFormScreen() {
   const activity = getActivityById(actId)
 
   return (
-    <div className='min-h-dvh flex items-center justify-center px-4' style={{ background: 'var(--bg)' }}>
+    <div
+      className='min-h-dvh flex items-center justify-center px-4'
+      style={{ background: 'var(--bg)' }}
+    >
       <div
         className='w-full max-w-md rounded-3xl p-6'
         style={{
@@ -15,9 +18,12 @@ export default function LogFormScreen() {
           border: '1px solid #1d2a55',
         }}
       >
-        <h1 className='m-0 text-2xl font-semibold'>{activity?.name || 'Activity Form'}</h1>
+        <h1 className='m-0 text-2xl font-semibold'>
+          {activity?.name || 'Activity Form'}
+        </h1>
         <p className='mt-2 text-sm' style={{ color: 'var(--muted)' }}>
-          Form wiring is next. The selected church context from Home is already persisted for submission.
+          Form wiring is next. The selected church context from Home is already
+          persisted for submission.
         </p>
         <button
           type='button'

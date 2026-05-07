@@ -88,7 +88,10 @@ export default function HomeScreen() {
 
   if (!user) {
     return (
-      <div className='min-h-dvh flex items-center justify-center' style={{ background: 'var(--bg)' }}>
+      <div
+        className='min-h-dvh flex items-center justify-center'
+        style={{ background: 'var(--bg)' }}
+      >
         <p style={{ color: 'var(--muted)' }}>Loading user...</p>
       </div>
     )
@@ -114,7 +117,8 @@ export default function HomeScreen() {
           <div className='flex items-start justify-between gap-3'>
             <div>
               <h1 className='m-0 text-3xl font-semibold tracking-tight'>
-                Hi <span style={{ color: 'var(--accent)' }}>{user.firstName}</span>
+                Hi{' '}
+                <span style={{ color: 'var(--accent)' }}>{user.firstName}</span>
               </h1>
               <p className='m-0 mt-1 text-sm' style={{ color: 'var(--muted)' }}>
                 {user.unitName} · {format(new Date(), 'EEE, MMM d')}
@@ -150,7 +154,10 @@ export default function HomeScreen() {
           </div>
 
           <div className='mt-4'>
-            <label className='mb-1 block text-xs uppercase tracking-wider' style={{ color: 'var(--muted)' }}>
+            <label
+              className='mb-1 block text-xs uppercase tracking-wider'
+              style={{ color: 'var(--muted)' }}
+            >
               Church context
             </label>
             <select
@@ -166,7 +173,8 @@ export default function HomeScreen() {
             >
               {(user.churchContexts || []).map((ctx) => (
                 <option key={`${ctx.level}:${ctx.id}`} value={ctx.id}>
-                  {ctx.name} ({ctx.level === 'oversight' ? 'Council' : ctx.level})
+                  {ctx.name} (
+                  {ctx.level === 'oversight' ? 'Council' : ctx.level})
                 </option>
               ))}
             </select>
@@ -174,7 +182,10 @@ export default function HomeScreen() {
 
           <div className='mt-5 grid grid-cols-2 gap-3'>
             {CATEGORIES.map((category, index) => {
-              const count = getActivitiesByCategoryAndLevel(category.id, user.level).length
+              const count = getActivitiesByCategoryAndLevel(
+                category.id,
+                user.level,
+              ).length
               return (
                 <button
                   type='button'
@@ -189,7 +200,9 @@ export default function HomeScreen() {
                   }}
                 >
                   <div className='text-xl'>{category.icon}</div>
-                  <p className='m-0 mt-1 text-lg font-semibold'>{category.label}</p>
+                  <p className='m-0 mt-1 text-lg font-semibold'>
+                    {category.label}
+                  </p>
                   <p className='m-0 text-xs' style={{ color: 'var(--muted)' }}>
                     {count} activities
                   </p>
@@ -198,8 +211,14 @@ export default function HomeScreen() {
             })}
           </div>
 
-          <div className='mt-6 border-t pt-4' style={{ borderColor: '#24305d' }}>
-            <p className='m-0 text-xs uppercase tracking-[0.2em]' style={{ color: 'var(--muted)' }}>
+          <div
+            className='mt-6 border-t pt-4'
+            style={{ borderColor: '#24305d' }}
+          >
+            <p
+              className='m-0 text-xs uppercase tracking-[0.2em]'
+              style={{ color: 'var(--muted)' }}
+            >
               Recent Activity
             </p>
 
@@ -225,23 +244,38 @@ export default function HomeScreen() {
                   >
                     <div className='flex items-center justify-between gap-2'>
                       <div>
-                        <p className='m-0 text-sm font-semibold'>{log.activityName}</p>
-                        <p className='m-0 text-xs' style={{ color: 'var(--muted)' }}>
+                        <p className='m-0 text-sm font-semibold'>
+                          {log.activityName}
+                        </p>
+                        <p
+                          className='m-0 text-xs'
+                          style={{ color: 'var(--muted)' }}
+                        >
                           {log.submittedBy?.unitName || user.unitName}
                         </p>
                       </div>
-                      <p className='m-0 text-xs' style={{ color: 'var(--muted)' }}>
-                        {formatDistanceToNow(new Date(log.submittedAt), { addSuffix: true })}
+                      <p
+                        className='m-0 text-xs'
+                        style={{ color: 'var(--muted)' }}
+                      >
+                        {formatDistanceToNow(new Date(log.submittedAt), {
+                          addSuffix: true,
+                        })}
                       </p>
                     </div>
 
                     {expanded && (
-                      <div className='mt-2 text-xs' style={{ color: '#bac8f5' }}>
-                        {Object.entries(log.fields || {}).map(([field, value]) => (
-                          <p className='m-0' key={`${log.id}-${field}`}>
-                            {field}: {String(value)}
-                          </p>
-                        ))}
+                      <div
+                        className='mt-2 text-xs'
+                        style={{ color: '#bac8f5' }}
+                      >
+                        {Object.entries(log.fields || {}).map(
+                          ([field, value]) => (
+                            <p className='m-0' key={`${log.id}-${field}`}>
+                              {field}: {String(value)}
+                            </p>
+                          ),
+                        )}
                       </div>
                     )}
                   </button>
