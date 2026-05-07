@@ -1,0 +1,245 @@
+// src/utils/auth.js
+// JWT decode + role→level mapping
+// Wire real auth by replacing getCurrentUser() body
+
+import { getActivitiesForLevel } from '../data/activities'
+
+const MEMBER_GRAPHQL_URL =
+  import.meta.env.VITE_MEMBER_GRAPHQL_URL ||
+  'https://api-synago.firstlovecenter.com/graphql'
+
+const MEMBER_BY_EMAIL_QUERY = `
+query memberByEmail($email: String!) {
+  memberByEmail(email: $email) {
+    id
+    firstName
+    lastName
+    fullName
+    nameWithTitle
+    pictureUrl
+    stream_name
+    bacenta {
+      id
+      governorship {
+        id
+        council {
+          id
+          __typename
+        }
+        __typename
+      }
+      __typename
+    }
+    leadsBacenta { id name __typename }
+    leadsGovernorship { id name __typename }
+    leadsCouncil { id name __typename }
+    isAdminForGovernorship { id name __typename }
+    isAdminForCouncil { id name __typename }
+    isArrivalsAdminForGovernorship { id name __typename }
+    isArrivalsAdminForCouncil { id name __typename }
+    __typename
+  }
+}
+`
+
+export function decodeJWT(token) {
+  try { return JSON.parse(atob(token.split('.')[1])); } catch { return null; }
+}
+
+export function getLevelFromRoles(roles = []) {
+  const r = roles.map(x => x.toLowerCase());
+  if (r.some(x => x.includes('stream') || x.includes('oversight') || x.includes('council'))) return 'oversight';
+  if (r.some(x => x.includes('governorship'))) return 'governorship';
+  if (r.some(x => x.includes('bacenta'))) return 'bacenta';
+  return 'bacenta';
+}
+
+export function isAdmin(roles = []) {
+  return roles.some(r => r.startsWith('admin'));
+}
+
+function hasActivities(level) {
+  return getActivitiesForLevel(level).length > 0
+}
+
+function uniqueChurchContexts(contexts) {
+  const seen = new Set()
+  return contexts.filter((ctx) => {
+    const key = `${ctx.level}:${ctx.id}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+function normalizeChurchContexts(member) {
+  const toContext = (item, level, source) => {
+    if (!item?.id) return null
+    return {
+      id: item.id,
+      name: item.name || `${source} ${item.id.slice(0, 6)}`,
+      level,
+      source,
+    }
+  }
+
+  const contexts = [
+    ...(member?.leadsCouncil || []).map((x) => toContext(x, 'oversight', 'Council Lead')),
+    ...(member?.isAdminForCouncil || []).map((x) => toContext(x, 'oversight', 'Council Admin')),
+    ...(member?.isArrivalsAdminForCouncil || []).map((x) => toContext(x, 'oversight', 'Council Arrivals Admin')),
+    ...(member?.leadsGovernorship || []).map((x) => toContext(x, 'governorship', 'Governorship Lead')),
+    ...(member?.isAdminForGovernorship || []).map((x) => toContext(x, 'governorship', 'Governorship Admin')),
+    ...(member?.isArrivalsAdminForGovernorship || []).map((x) => toContext(x, 'governorship', 'Governorship Arrivals Admin')),
+    ...(member?.leadsBacenta || []).map((x) => toContext(x, 'bacenta', 'Bacenta Lead')),
+  ].filter(Boolean)
+
+  const fallbackBacentaId = member?.bacenta?.id
+  if (fallbackBacentaId) {
+    contexts.push({
+      id: fallbackBacentaId,
+      name: member?.leadsBacenta?.[0]?.name || 'Assigned Bacenta',
+      level: 'bacenta',
+      source: 'Member Bacenta',
+    })
+  }
+
+  return uniqueChurchContexts(contexts).filter((ctx) => hasActivities(ctx.level))
+}
+
+function localFallbackChurchContexts(payload) {
+  return uniqueChurchContexts([
+    payload?.council?.id
+      ? { id: payload.council.id, name: payload.council.name || 'Council', level: 'oversight', source: 'Local Council' }
+      : null,
+    payload?.governorship?.id
+      ? { id: payload.governorship.id, name: payload.governorship.name || 'Governorship', level: 'governorship', source: 'Local Governorship' }
+      : null,
+    payload?.bacenta?.id
+      ? { id: payload.bacenta.id, name: payload.bacenta.name || 'Bacenta', level: 'bacenta', source: 'Local Bacenta' }
+      : null,
+  ].filter(Boolean)).filter((ctx) => hasActivities(ctx.level))
+}
+
+// ── MOCK — swap this whole block when real auth is ready ──────────────────
+export const MOCK_USER = {
+  userId: '7573ecf9-b445-40ce-ba24-5c8ed262bf82',
+  email: 'dabick14@gmail.com',
+  firstName: 'David Dag',
+  lastName: 'Vanderpuije',
+  roles: ['leaderBacenta', 'leaderOversight', 'adminStream'],
+  bacenta:     { id: '9e926ea4', name: 'God Chasers' },
+  governorship:{ id: 'a9eda2d9', name: 'Haatso Mabey' },
+  council:     { name: 'Colossians 1' },
+  stream:      { id: '2dd77486', name: 'Colossians' },
+};
+
+export function getCurrentUser() {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    const payload = decodeJWT(token);
+    if (payload) return enrichUser(payload);
+  }
+  // Demo mode (no real token)
+  const demo = localStorage.getItem('demoUser');
+  if (demo) {
+    try { return JSON.parse(demo); } catch { /* ignore */ }
+  }
+  // Fall back to mock during development when nothing is stored
+  return enrichUser(MOCK_USER);
+}
+
+export function enrichUser(payload) {
+  const level = getLevelFromRoles(payload.roles || []);
+  const unitName =
+    payload.bacenta?.name ||
+    payload.governorship?.name ||
+    payload.council?.name ||
+    payload.stream?.name || '';
+  const churchContexts = localFallbackChurchContexts(payload)
+  const activeChurch = churchContexts[0] || null
+  return {
+    ...payload,
+    level: activeChurch?.level || level,
+    unitName: activeChurch?.name || unitName,
+    isAdmin: isAdmin(payload.roles || []),
+    churchContexts,
+    activeChurch,
+  }
+}
+
+export async function fetchMemberByEmail(email) {
+  if (!email) throw new Error('Email is required to load church contexts')
+
+  const response = await fetch(MEMBER_GRAPHQL_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: MEMBER_BY_EMAIL_QUERY,
+      variables: { email },
+    }),
+  })
+
+  const json = await response.json()
+  if (!response.ok || json.errors?.length) {
+    throw new Error(json.errors?.[0]?.message || 'Failed to fetch member profile')
+  }
+
+  return json?.data?.memberByEmail || null
+}
+
+export async function resolveChurchContextsForUser(user) {
+  try {
+    const member = await fetchMemberByEmail(user.email)
+    const churchContexts = normalizeChurchContexts(member)
+    if (churchContexts.length) {
+      return {
+        member,
+        churchContexts,
+        activeChurch: churchContexts[0],
+      }
+    }
+  } catch {
+    // fall back to local user payload if graphql is unavailable
+  }
+
+  const churchContexts = localFallbackChurchContexts(user)
+  return {
+    member: null,
+    churchContexts,
+    activeChurch: churchContexts[0] || null,
+  }
+}
+
+export function withActiveChurch(user, church) {
+  const nextChurch = church || user?.activeChurch || null
+  if (!nextChurch) return user
+  return {
+    ...user,
+    activeChurch: nextChurch,
+    level: nextChurch.level,
+    unitName: nextChurch.name,
+  }
+}
+
+// ── Real login call ───────────────────────────────────────────────────────
+export async function loginWithCredentials(email, password) {
+  const res = await fetch(`${import.meta.env.VITE_AUTH_API_URL}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || data.message || 'Login failed');
+  localStorage.setItem('accessToken', data.tokens.accessToken);
+  localStorage.setItem('refreshToken', data.tokens.refreshToken);
+  const payload = decodeJWT(data.tokens.accessToken);
+  // Normalise: API returns id, JWT has userId — keep userId
+  const { id, ...userFields } = data.user;
+  return enrichUser({ ...payload, ...userFields, userId: payload.userId ?? id });
+}
+
+export function logout() {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('demoUser');
+}
