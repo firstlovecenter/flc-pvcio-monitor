@@ -1,96 +1,205 @@
 // src/utils/logs.js
-// CRUD for log entries — localStorage for now.
-// Every function is designed to be swappable with API calls later.
-// Look for TODO comments marking the swap points.
+// Activity log CRUD — backed by Supabase.
+//
+// UNIT-CENTRIC STORAGE: every log stores the church unit's stable IDs
+// (bacenta_id, governorship_id, council_id, stream_id) so that all
+// history for a unit is queryable even after a leader change.
+// submitted_by_id is the audit trail only.
 
-import { v4 as uuidv4 } from 'uuid'; // add uuid package: npm install uuid
-
-const STORAGE_KEY = (userId) => `pvcio_logs_${userId}`;
+import { supabase } from './supabase'
 
 // ── Read ──────────────────────────────────────────────────────────────────
 
-/** Returns all logs for a user, newest first */
-export function getLogs(userId) {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY(userId));
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+/**
+ * Returns the last `limit` logs for the given user (home feed).
+ * @param {string} userId
+ * @param {number} limit
+ * @returns {Promise<object[]>}
+ */
+export async function getRecentLogs(userId, limit = 20) {
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .select('*')
+    .eq('submitted_by_id', userId)
+    .order('submitted_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data
 }
 
-/** Returns logs filtered by category */
-export function getLogsByCategory(userId, categoryId) {
-  return getLogs(userId).filter(l => l.category === categoryId);
+/**
+ * Returns all logs for a user filtered by category.
+ * @param {string} userId
+ * @param {string} categoryId
+ * @returns {Promise<object[]>}
+ */
+export async function getLogsByCategory(userId, categoryId) {
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .select('*')
+    .eq('submitted_by_id', userId)
+    .eq('category', categoryId)
+    .order('submitted_at', { ascending: false })
+  if (error) throw error
+  return data
 }
 
-/** Returns logs filtered by activityId */
-export function getLogsByActivity(userId, activityId) {
-  return getLogs(userId).filter(l => l.activityId === activityId);
-}
-
-/** Returns the last N logs (default 20) for the home feed */
-export function getRecentLogs(userId, n = 20) {
-  return getLogs(userId).slice(0, n);
+/**
+ * Returns all logs for a specific church unit (unit-centric query).
+ * Use this instead of querying by leader when building dashboards.
+ * @param {'bacenta'|'governorship'|'council'} unitType
+ * @param {string} unitId
+ * @returns {Promise<object[]>}
+ */
+export async function getLogsByUnit(unitType, unitId) {
+  const column = `${unitType}_id`  // 'bacenta_id' | 'governorship_id' | 'council_id'
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .select('*')
+    .eq(column, unitId)
+    .order('submitted_at', { ascending: false })
+  if (error) throw error
+  return data
 }
 
 // ── Write ─────────────────────────────────────────────────────────────────
 
 /**
- * Add a new log entry.
- * @param {string} userId
- * @param {object} entry - partial entry, id and submittedAt added automatically
+ * Save a new activity log entry.
  *
- * Entry shape:
- * {
- *   activityId: 'p1',
- *   activityName: 'Bacenta Prayer Meeting',
- *   category: 'prayer',
- *   level: 'bacenta',
- *   submittedBy: { userId, name, level, unitName, governorship, council, stream },
- *   fields: { attendance: 12, note: '...' }
- * }
+ * Stores unit IDs alongside unit names so the record belongs to the
+ * church unit permanently, regardless of future leader changes.
+ *
+ * @param {object} user    — enriched user object from getCurrentUser()
+ * @param {object} entry   — { activityId, activityName, category, level, freq, fields }
+ * @param {File|null} photoFile — raw File object if a photo was captured
+ * @returns {Promise<object>} — the inserted row
  */
-export function addLog(userId, entry) {
-  const logs = getLogs(userId);
-  const newEntry = {
-    ...entry,
-    id: uuidv4(),
-    submittedAt: new Date().toISOString(),
-  };
-  const updated = [newEntry, ...logs];
-  // TODO: replace localStorage.setItem with POST to API
-  // await fetch('/api/logs', { method:'POST', body: JSON.stringify(newEntry) })
-  localStorage.setItem(STORAGE_KEY(userId), JSON.stringify(updated));
-  return newEntry;
+export async function addLog(user, entry, photoFile = null) {
+  let photoUrl = null
+  if (photoFile) {
+    photoUrl = await uploadPhoto(user.userId, photoFile)
+  }
+
+  // Resolve the active church context — this is the unit being logged for.
+  const active = user.activeChurch || null
+
+  // Build stable unit IDs. We store every ancestor ID we have so
+  // oversight dashboards can filter by any level.
+  const bacentaId      = active?.level === 'bacenta'      ? active.id : null
+  const governorshipId = active?.level === 'governorship' ? active.id
+                       : user.governorship?.id            || null
+  const councilId      = active?.level === 'oversight'    ? active.id
+                       : user.council?.id                 || null
+  const streamId       = user.stream?.id || null
+
+  const row = {
+    activity_id:       entry.activityId,
+    activity_name:     entry.activityName,
+    category:          entry.category,
+    level:             entry.level,
+    freq:              entry.freq,
+
+    // Unit IDs (unit-centric — the source of truth for reporting)
+    bacenta_id:        bacentaId,
+    governorship_id:   governorshipId,
+    council_id:        councilId,
+    stream_id:         streamId,
+
+    // Unit display names (denormalised for fast display)
+    bacenta_name:      active?.level === 'bacenta'      ? active.name : null,
+    governorship_name: active?.level === 'governorship' ? active.name
+                     : user.governorship?.name          || null,
+    council_name:      active?.level === 'oversight'    ? active.name
+                     : user.council?.name               || null,
+    stream_name:       user.stream?.name || null,
+
+    // Audit trail
+    submitted_by_id:   user.userId,
+    submitted_by_name: `${user.firstName} ${user.lastName}`,
+
+    fields:    entry.fields,
+    photo_url: photoUrl,
+  }
+
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .insert(row)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
 }
-
-/** Delete a log entry by id */
-export function deleteLog(userId, logId) {
-  const updated = getLogs(userId).filter(l => l.id !== logId);
-  // TODO: replace with DELETE /api/logs/:logId
-  localStorage.setItem(STORAGE_KEY(userId), JSON.stringify(updated));
-}
-
-// ── Export ────────────────────────────────────────────────────────────────
-
-/** Returns all logs as a JSON string — for manual backup or future API sync */
-export function exportLogs(userId) {
-  return JSON.stringify(getLogs(userId), null, 2);
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────
 
 /**
- * Build the submittedBy block from the current user object.
- * Call this before addLog().
+ * Delete a log entry by its UUID.
+ * RLS ensures only the submitter can delete their own logs.
+ * @param {string} logId
  */
-export function buildSubmittedBy(user) {
-  return {
-    userId:       user.userId,
-    name:         `${user.firstName} ${user.lastName}`,
-    level:        user.level,
-    unitName:     user.unitName,
-    governorship: user.governorship?.name || null,
-    council:      user.council?.name      || null,
-    stream:       user.stream?.name       || null,
-  };
+export async function deleteLog(logId) {
+  const { error } = await supabase
+    .from('activity_logs')
+    .delete()
+    .eq('id', logId)
+  if (error) throw error
+}
+
+// ── Photos ────────────────────────────────────────────────────────────────
+
+/**
+ * Upload a photo file to Supabase Storage and return its public URL.
+ * Path: {userId}/{timestamp}.{ext}
+ * @param {string} userId
+ * @param {File} file
+ * @returns {Promise<string>} public URL
+ */
+export async function uploadPhoto(userId, file) {
+  const ext      = file.name.split('.').pop()
+  const filename = `${userId}/${Date.now()}.${ext}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('activity-photos')
+    .upload(filename, file, { upsert: false })
+
+  if (uploadError) throw uploadError
+
+  const { data } = supabase.storage
+    .from('activity-photos')
+    .getPublicUrl(filename)
+
+  return data.publicUrl
+}
+
+// ── Profile sync ──────────────────────────────────────────────────────────
+
+/**
+ * Upsert the leader's profile in Supabase from the enriched user object.
+ * Call this on every login to keep profile data in sync with the JWT.
+ * @param {object} user — enriched user object from enrichUser()
+ */
+export async function upsertProfile(user) {
+  const { error } = await supabase
+    .from('profiles')
+    .upsert(
+      {
+        id:                user.userId,
+        email:             user.email,
+        first_name:        user.firstName,
+        last_name:         user.lastName,
+        level:             user.level,
+        roles:             user.roles || [],
+        bacenta_id:        user.bacenta?.id        || null,
+        bacenta_name:      user.bacenta?.name      || null,
+        governorship_id:   user.governorship?.id   || null,
+        governorship_name: user.governorship?.name || null,
+        council_id:        user.council?.id        || null,
+        council_name:      user.council?.name      || null,
+        stream_id:         user.stream?.id         || null,
+        stream_name:       user.stream?.name       || null,
+        updated_at:        new Date().toISOString(),
+      },
+      { onConflict: 'id' },
+    )
+  if (error) throw error
 }

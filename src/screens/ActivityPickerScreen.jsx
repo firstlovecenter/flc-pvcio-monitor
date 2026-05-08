@@ -18,7 +18,7 @@ const FREQ_ORDER = ['weekly', 'monthly', 'flexible']
 export default function ActivityPickerScreen() {
   const navigate = useNavigate()
   const { cat } = useParams()
-  const user = getCurrentUser()
+  const user = JSON.parse(sessionStorage.getItem('currentUser') || 'null') || getCurrentUser()
 
   const category = getCategoryById(cat)
   const grouped = useMemo(() => {
@@ -26,14 +26,11 @@ export default function ActivityPickerScreen() {
     return groupByFreq(activities)
   }, [cat, user.level])
 
-  const hasAny = FREQ_ORDER.some((f) => grouped[f]?.length)
+  const hasAny = FREQ_ORDER.some(f => grouped[f]?.length)
 
   if (!category) {
     return (
-      <div
-        className='min-h-dvh flex items-center justify-center'
-        style={{ background: 'var(--bg)', color: 'var(--muted)' }}
-      >
+      <div className='min-h-dvh flex items-center justify-center' style={{ background: 'var(--bg)', color: 'var(--muted)' }}>
         Category not found.
       </div>
     )
@@ -43,18 +40,14 @@ export default function ActivityPickerScreen() {
     <div
       className='min-h-dvh'
       style={{
-        background:
-          'radial-gradient(120% 80% at 50% -10%, #1A2450 0%, #101528 45%, #0C0F1A 100%)',
+        background: 'radial-gradient(120% 80% at 50% -10%, #1A2450 0%, #101528 45%, #0C0F1A 100%)',
         color: 'var(--text)',
       }}
     >
       {/* Sticky header */}
       <header
         className='sticky top-0 z-10 flex items-center justify-between px-4 pt-10 pb-4'
-        style={{
-          background: 'rgba(12,15,26,0.92)',
-          backdropFilter: 'blur(12px)',
-        }}
+        style={{ background: 'rgba(12,15,26,0.92)', backdropFilter: 'blur(12px)' }}
       >
         {/* Back + title */}
         <div className='flex items-center gap-3'>
@@ -65,26 +58,13 @@ export default function ActivityPickerScreen() {
             className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full cursor-pointer transition-opacity active:opacity-60'
             style={{ background: '#1a2450', border: '1px solid #2d3c74' }}
           >
-            <svg
-              width='16'
-              height='16'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='currentColor'
-              strokeWidth='2.5'
-              strokeLinecap='round'
-              strokeLinejoin='round'
-            >
+            <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' strokeLinejoin='round'>
               <path d='M19 12H5M12 5l-7 7 7 7' />
             </svg>
           </button>
           <div>
-            <h1 className='m-0 text-xl font-bold leading-tight'>
-              {category.label}
-            </h1>
-            <p className='m-0 text-xs' style={{ color: 'var(--muted)' }}>
-              Select activity
-            </p>
+            <h1 className='m-0 text-xl font-bold leading-tight'>{category.label}</h1>
+            <p className='m-0 text-xs' style={{ color: 'var(--muted)' }}>Select activity</p>
           </div>
         </div>
 
@@ -109,7 +89,7 @@ export default function ActivityPickerScreen() {
           </p>
         )}
 
-        {FREQ_ORDER.map((freq) => {
+        {FREQ_ORDER.map(freq => {
           const items = grouped[freq] || []
           if (!items.length) return null
 
@@ -123,7 +103,7 @@ export default function ActivityPickerScreen() {
               </p>
 
               <div className='flex flex-col gap-2'>
-                {items.map((activity) => (
+                {items.map(activity => (
                   <button
                     type='button'
                     key={activity.id}
@@ -136,16 +116,10 @@ export default function ActivityPickerScreen() {
                   >
                     <div className='flex items-center justify-between gap-3'>
                       <div className='min-w-0'>
-                        <p
-                          className='m-0 truncate font-semibold'
-                          style={{ color: 'var(--text)' }}
-                        >
+                        <p className='m-0 truncate font-semibold' style={{ color: 'var(--text)' }}>
                           {activity.name}
                         </p>
-                        <p
-                          className='m-0 mt-0.5 text-sm'
-                          style={{ color: 'var(--muted)' }}
-                        >
+                        <p className='m-0 mt-0.5 text-sm' style={{ color: 'var(--muted)' }}>
                           {activity.desc}
                         </p>
                       </div>
