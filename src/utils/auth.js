@@ -51,6 +51,8 @@ function normalizeChurchContexts(member) {
   }
 
   const contexts = [
+    ...(member?.leadsStream || []).map((x) => toContext(x, 'bishop', 'Stream Lead')),
+    ...(member?.isAdminForStream || []).map((x) => toContext(x, 'bishop', 'Stream Admin')),
     ...(member?.leadsCouncil || []).map((x) => toContext(x, 'overseer', 'Council Lead')),
     ...(member?.isAdminForCouncil || []).map((x) => toContext(x, 'overseer', 'Council Admin')),
     ...(member?.isArrivalsAdminForCouncil || []).map((x) => toContext(x, 'overseer', 'Council Arrivals Admin')),
@@ -75,6 +77,9 @@ function normalizeChurchContexts(member) {
 
 function localFallbackChurchContexts(payload) {
   return uniqueChurchContexts([
+    payload?.stream?.id
+      ? { id: payload.stream.id, name: payload.stream.name || 'Stream', level: 'bishop', source: 'Local Stream' }
+      : null,
     payload?.council?.id
       ? { id: payload.council.id, name: payload.council.name || 'Council', level: 'overseer', source: 'Local Council' }
       : null,
