@@ -5,6 +5,10 @@ export default function AttendanceField({ field, value, onChange, error }) {
   const [editing, setEditing] = useState(false)
   const inputRef = useRef(null)
 
+  // flagBelow: if set to a number, show a warning when count > 0 and count < threshold
+  const threshold = typeof field.flagBelow === 'number' ? field.flagBelow : null
+  const isBelowThreshold = threshold !== null && count > 0 && count < threshold
+
   function decrement() {
     if (count > 0) onChange(count - 1)
   }
@@ -44,7 +48,7 @@ export default function AttendanceField({ field, value, onChange, error }) {
         className='flex items-center rounded-2xl overflow-hidden'
         style={{
           background: 'var(--card)',
-          border: error ? '1px solid #f87171' : '1px solid var(--border)',
+          border: error ? '1px solid #f87171' : isBelowThreshold ? '1px solid #FBBF24' : '1px solid var(--border)',
         }}
       >
         {/* Decrement */}
@@ -103,6 +107,11 @@ export default function AttendanceField({ field, value, onChange, error }) {
       <p className='text-xs' style={{ color: 'var(--muted)', marginTop: -4 }}>
         Tap the number to type it directly
       </p>
+      {isBelowThreshold && !error && (
+        <p className='text-xs mt-0.5' style={{ color: '#FBBF24' }}>
+          Target is {threshold} — you're below the minimum
+        </p>
+      )}
       {error && <p className='text-xs mt-0.5' style={{ color: '#f87171' }}>{error}</p>}
     </div>
   )

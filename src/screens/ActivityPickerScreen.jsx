@@ -9,11 +9,10 @@ import { getCurrentUser } from '../utils/auth'
 
 const GROUP_LABELS = {
   weekly: 'Weekly Recurring',
-  monthly: 'Monthly',
-  flexible: 'As They Happen',
+  cycle: 'Once This 6-Week Cycle',
 }
 
-const FREQ_ORDER = ['weekly', 'monthly', 'flexible']
+const FREQ_ORDER = ['weekly', 'cycle']
 
 export default function ActivityPickerScreen() {
   const navigate = useNavigate()
