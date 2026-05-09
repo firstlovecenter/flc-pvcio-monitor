@@ -1,20 +1,23 @@
 import { useEffect, useState } from 'react'
-import { format, formatDistanceToNow } from 'date-fns'
+import { format, formatDistanceToNow, getISOWeek, getYear, startOfISOWeek, endOfISOWeek, addWeeks } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
-import { CATEGORIES, getActivitiesByCategoryAndLevel } from '../data/activities'
-import { getRecentLogs } from '../utils/logs'
+import { CATEGORIES, getActivitiesForLevel, getActivitiesByCategoryAndLevel } from '../data/activities'
+import { getRecentLogs, getWeeklySummary, addWeeklySummary, getISOWeekString } from '../utils/logs'
 import {
   getCurrentUser,
   logout,
   resolveChurchContextsForUser,
   withActiveChurch,
 } from '../utils/auth'
+import WeeklySummaryModal from '../components/WeeklySummaryModal'
 
 const CHURCH_STORAGE_KEY = 'activeChurchId'
 
 function levelBadgeColor(level) {
   if (level === 'bacenta') return '#7fa8ff'
   if (level === 'governorship') return '#c4b5fd'
+  if (level === 'overseer') return '#fcd34d'
+  if (level === 'bishop') return '#f87060'
   return '#fcd34d'
 }
 
@@ -24,6 +27,8 @@ export default function HomeScreen() {
   const [loadingChurches, setLoadingChurches] = useState(true)
   const [expandedLogId, setExpandedLogId] = useState(null)
   const [recentLogs, setRecentLogs] = useState([])
+  const [weeklySummaryData, setWeeklySummaryData] = useState(null) // { isoWeek, weekLabel, logsCount, missedNames }
+  const [summaryDismissed, setSummaryDismissed] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -73,11 +78,65 @@ export default function HomeScreen() {
       .catch((err) => console.error('[HomeScreen] getRecentLogs:', err.message))
   }, [user?.userId])
 
+  // Weekly summary prompt: show on Sunday (day 0) or Monday (day 1) if previous week has no summary
+  useEffect(() => {
+    if (!user?.userId || summaryDismissed) return
+    const today = new Date()
+    const dayOfWeek = today.getDay() // 0=Sun, 1=Mon
+    if (dayOfWeek !== 0 && dayOfWeek !== 1) return
+
+    // Previous ISO week
+    const prevWeekDate = addWeeks(today, -1)
+    const prevIsoWeek = getISOWeekString(prevWeekDate)
+    const dismissKey = `weeklySummaryDismissed:${prevIsoWeek}`
+    if (sessionStorage.getItem(dismissKey)) return
+
+    getWeeklySummary(user.userId, prevIsoWeek)
+      .then((existing) => {
+        if (existing) return // already logged
+        // Build summary data
+        const weekStart = startOfISOWeek(prevWeekDate)
+        const weekEnd = endOfISOWeek(prevWeekDate)
+        const weekLabel = `Week of ${format(weekStart, 'MMM d')}–${format(weekEnd, 'd MMM')}`
+        const weekLogs = recentLogs.filter((log) => log.iso_week === prevIsoWeek && log.type === 'activity')
+        const logsCount = weekLogs.length
+        const loggedIds = new Set(weekLogs.map((l) => l.activity_id))
+        const recurring = getActivitiesForLevel(user.level).filter((a) => a.freq === 'weekly')
+        const missedNames = recurring
+          .filter((a) => !loggedIds.has(a.id))
+          .map((a) => a.name)
+        setWeeklySummaryData({ isoWeek: prevIsoWeek, weekLabel, logsCount, missedNames })
+      })
+      .catch((err) => console.error('[HomeScreen] weekly summary check:', err.message))
+  }, [user?.userId, user?.level, recentLogs, summaryDismissed])
+
   function handleLogout() {
     logout()
     sessionStorage.removeItem('currentUser')
     sessionStorage.removeItem(CHURCH_STORAGE_KEY)
     navigate('/')
+  }
+
+  function handleSummaryDismiss() {
+    if (weeklySummaryData?.isoWeek) {
+      sessionStorage.setItem(`weeklySummaryDismissed:${weeklySummaryData.isoWeek}`, '1')
+    }
+    setSummaryDismissed(true)
+    setWeeklySummaryData(null)
+  }
+
+  async function handleSummarySubmit(note) {
+    if (!weeklySummaryData || !user) return
+    try {
+      await addWeeklySummary(user, weeklySummaryData.isoWeek, {
+        logsThisWeek:     weeklySummaryData.logsCount,
+        missedActivities: weeklySummaryData.missedNames,
+        note,
+      })
+    } catch (err) {
+      console.error('[HomeScreen] addWeeklySummary:', err.message)
+    }
+    setWeeklySummaryData(null)
   }
 
   function handleChurchChange(churchId) {
@@ -99,6 +158,7 @@ export default function HomeScreen() {
   }
 
   return (
+    <>
     <div
       className='min-h-dvh px-4 py-6'
       style={{
@@ -170,7 +230,7 @@ export default function HomeScreen() {
             >
               {(user.churchContexts || []).map((ctx) => (
                 <option key={`${ctx.level}:${ctx.id}`} value={ctx.id}>
-                  {ctx.name} ({ctx.level === 'oversight' ? 'Council' : ctx.level})
+                  {ctx.name} ({ctx.level === 'overseer' ? 'Council' : ctx.level})
                 </option>
               ))}
             </select>
@@ -258,5 +318,17 @@ export default function HomeScreen() {
         </div>
       </div>
     </div>
+
+    {weeklySummaryData && !summaryDismissed && (
+      <WeeklySummaryModal
+        isoWeek={weeklySummaryData.isoWeek}
+        weekLabel={weeklySummaryData.weekLabel}
+        logsCount={weeklySummaryData.logsCount}
+        missedNames={weeklySummaryData.missedNames}
+        onSubmit={handleSummarySubmit}
+        onDismiss={handleSummaryDismiss}
+      />
+    )}
+    </>
   )
 }

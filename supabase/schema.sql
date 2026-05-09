@@ -20,7 +20,7 @@
     first_name        text not null,
     last_name         text not null,
     level             text not null
-                        check (level in ('bacenta', 'governorship', 'oversight')),
+                        check (level in ('bacenta', 'governorship', 'overseer', 'bishop')),
     roles             text[] not null default '{}',
 
     -- Church unit references (IDs sourced from the FLC Members system)
@@ -55,11 +55,17 @@
     activity_id       text not null,            -- e.g. 'p1', 'o7'
     activity_name     text not null,            -- e.g. 'Bacenta Prayer Meeting'
     category          text not null
-                        check (category in ('prayer', 'visitation', 'counseling', 'teaching', 'outreaches')),
+                        check (category in ('prayer', 'visitation', 'counseling', 'teaching', 'outreaches', 'summary')),
     level             text not null             -- activity's level (not submitter's level)
-                        check (level in ('bacenta', 'governorship', 'oversight')),
+                        check (level in ('bacenta', 'governorship', 'overseer', 'bishop')),
     freq              text not null
-                        check (freq in ('weekly', 'monthly', 'flexible')),
+                        check (freq in ('weekly', 'cycle')),
+
+    -- Log type: 'activity' for normal logs, 'weekly_summary' for end-of-week summaries
+    type              text not null default 'activity'
+                        check (type in ('activity', 'weekly_summary')),
+    -- ISO week string (e.g. '2026-W20') for grouping and summary lookups
+    iso_week          text,
 
     -- ── UNIT IDs ── (stable; survives leader changes) ─────────────
     -- For a bacenta-level log:  bacenta_id is set; governorship_id = parent gov

@@ -9,25 +9,33 @@ import NoteField from '../components/fields/NoteField'
 import PhotoField from '../components/fields/PhotoField'
 import NamesField from '../components/fields/NamesField'
 import IssueTypeField from '../components/fields/IssueTypeField'
+import SelectField from '../components/fields/SelectField'
 
 const FREQ_LABELS = {
   weekly: 'Weekly',
-  monthly: 'Monthly',
-  flexible: 'As it happens',
+  cycle: 'This 6-week cycle',
 }
 
-function FieldRenderer({ field, value, onChange, error }) {
-  switch (field.type) {
+function FieldRenderer({ field, value, onChange, error, activity, userLevel }) {
+  // Resolve 'minimumByLevel' flagBelow to the actual threshold for the user's level
+  const resolvedField =
+    field.flagBelow === 'minimumByLevel' && activity?.minimumByLevel
+      ? { ...field, flagBelow: activity.minimumByLevel[userLevel] ?? 0 }
+      : field
+
+  switch (resolvedField.type) {
     case 'attendance':
-      return <AttendanceField field={field} value={value} onChange={onChange} error={error} />
+      return <AttendanceField field={resolvedField} value={value} onChange={onChange} error={error} />
     case 'note':
-      return <NoteField field={field} value={value} onChange={onChange} />
+      return <NoteField field={resolvedField} value={value} onChange={onChange} />
     case 'photo':
-      return <PhotoField field={field} value={value} onChange={onChange} />
+      return <PhotoField field={resolvedField} value={value} onChange={onChange} />
     case 'names':
-      return <NamesField field={field} value={value} onChange={onChange} error={error} />
+      return <NamesField field={resolvedField} value={value} onChange={onChange} error={error} />
     case 'issueType':
-      return <IssueTypeField field={field} value={value} onChange={onChange} error={error} />
+      return <IssueTypeField field={resolvedField} value={value} onChange={onChange} error={error} />
+    case 'select':
+      return <SelectField field={resolvedField} value={value} onChange={onChange} error={error} />
     default:
       return null
   }
@@ -66,7 +74,7 @@ export default function LogFormScreen() {
       const val = values[f.id]
       if (f.type === 'attendance' && (val === undefined || val === null || val === 0)) {
         next[f.id] = 'Required — enter a number greater than 0'
-      } else if ((f.type === 'names' || f.type === 'issueType') && !val) {
+      } else if ((f.type === 'names' || f.type === 'issueType' || f.type === 'select') && !val) {
         next[f.id] = 'This field is required'
       }
     }
@@ -91,7 +99,7 @@ export default function LogFormScreen() {
         activityId:   activity.id,
         activityName: activity.name,
         category:     activity.category,
-        level:        activity.level,
+        level:        user.level,
         freq:         activity.freq,
         fields:       fieldValues,
       }, photoFile)
@@ -170,6 +178,8 @@ export default function LogFormScreen() {
                 value={values[field.id]}
                 onChange={(val) => handleChange(field.id, val)}
                 error={errors[field.id]}
+                activity={activity}
+                userLevel={user.level}
               />
             ))}
 

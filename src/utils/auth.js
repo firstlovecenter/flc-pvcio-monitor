@@ -14,7 +14,8 @@ export function decodeJWT(token) {
 
 export function getLevelFromRoles(roles = []) {
   const r = roles.map(x => x.toLowerCase());
-  if (r.some(x => x.includes('stream') || x.includes('oversight') || x.includes('council'))) return 'oversight';
+  if (r.some(x => x.includes('adminstream') || x.includes('leaderstream'))) return 'bishop';
+  if (r.some(x => x.includes('oversight') || x.includes('council'))) return 'overseer';
   if (r.some(x => x.includes('governorship'))) return 'governorship';
   if (r.some(x => x.includes('bacenta'))) return 'bacenta';
   return 'bacenta';
@@ -50,9 +51,9 @@ function normalizeChurchContexts(member) {
   }
 
   const contexts = [
-    ...(member?.leadsCouncil || []).map((x) => toContext(x, 'oversight', 'Council Lead')),
-    ...(member?.isAdminForCouncil || []).map((x) => toContext(x, 'oversight', 'Council Admin')),
-    ...(member?.isArrivalsAdminForCouncil || []).map((x) => toContext(x, 'oversight', 'Council Arrivals Admin')),
+    ...(member?.leadsCouncil || []).map((x) => toContext(x, 'overseer', 'Council Lead')),
+    ...(member?.isAdminForCouncil || []).map((x) => toContext(x, 'overseer', 'Council Admin')),
+    ...(member?.isArrivalsAdminForCouncil || []).map((x) => toContext(x, 'overseer', 'Council Arrivals Admin')),
     ...(member?.leadsGovernorship || []).map((x) => toContext(x, 'governorship', 'Governorship Lead')),
     ...(member?.isAdminForGovernorship || []).map((x) => toContext(x, 'governorship', 'Governorship Admin')),
     ...(member?.isArrivalsAdminForGovernorship || []).map((x) => toContext(x, 'governorship', 'Governorship Arrivals Admin')),
@@ -75,7 +76,7 @@ function normalizeChurchContexts(member) {
 function localFallbackChurchContexts(payload) {
   return uniqueChurchContexts([
     payload?.council?.id
-      ? { id: payload.council.id, name: payload.council.name || 'Council', level: 'oversight', source: 'Local Council' }
+      ? { id: payload.council.id, name: payload.council.name || 'Council', level: 'overseer', source: 'Local Council' }
       : null,
     payload?.governorship?.id
       ? { id: payload.governorship.id, name: payload.governorship.name || 'Governorship', level: 'governorship', source: 'Local Governorship' }

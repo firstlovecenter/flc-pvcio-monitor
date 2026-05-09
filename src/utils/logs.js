@@ -8,6 +8,22 @@
 
 import { supabase } from './supabase'
 
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+/**
+ * Returns ISO week string like '2026-W20'.
+ * @param {Date} date
+ * @returns {string}
+ */
+export function getISOWeekString(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
 // ── Read ──────────────────────────────────────────────────────────────────
 
 /**
@@ -94,6 +110,10 @@ export async function addLog(user, entry, photoFile = null) {
   const streamId       = user.stream?.id || null
 
   const row = {
+    // Activity type + ISO week
+    type:              'activity',
+    iso_week:          getISOWeekString(new Date()),
+
     activity_id:       entry.activityId,
     activity_name:     entry.activityName,
     category:          entry.category,
@@ -203,3 +223,63 @@ export async function upsertProfile(user) {
     )
   if (error) throw error
 }
+
+// ── Weekly Summary ────────────────────────────────────────────────────────
+
+/**
+ * Returns the weekly summary log for a given ISO week, or null if none.
+ * @param {string} userId
+ * @param {string} isoWeek — e.g. '2026-W20'
+ * @returns {Promise<object|null>}
+ */
+export async function getWeeklySummary(userId, isoWeek) {
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .select('*')
+    .eq('submitted_by_id', userId)
+    .eq('type', 'weekly_summary')
+    .eq('iso_week', isoWeek)
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
+
+/**
+ * Save a weekly summary log entry.
+ * @param {object} user — enriched user object
+ * @param {string} isoWeek — e.g. '2026-W20'
+ * @param {object} summary — { logsThisWeek, missedActivities, note }
+ * @returns {Promise<object>}
+ */
+export async function addWeeklySummary(user, isoWeek, { logsThisWeek, missedActivities, note }) {
+  const active = user.activeChurch || null
+  const row = {
+    type:              'weekly_summary',
+    iso_week:          isoWeek,
+    activity_id:       'weekly_summary',
+    activity_name:     'Weekly Summary',
+    category:          'summary',
+    level:             user.level,
+    freq:              'weekly',
+    bacenta_id:        active?.level === 'bacenta'      ? active.id : null,
+    governorship_id:   active?.level === 'governorship' ? active.id : user.governorship?.id || null,
+    council_id:        active?.level === 'overseer'     ? active.id : user.council?.id      || null,
+    stream_id:         user.stream?.id || null,
+    bacenta_name:      active?.level === 'bacenta'      ? active.name : null,
+    governorship_name: active?.level === 'governorship' ? active.name : user.governorship?.name || null,
+    council_name:      active?.level === 'overseer'     ? active.name : user.council?.name      || null,
+    stream_name:       user.stream?.name || null,
+    submitted_by_id:   user.userId,
+    submitted_by_name: `${user.firstName} ${user.lastName}`,
+    fields:            { logsThisWeek, missedActivities, note },
+    photo_url:         null,
+  }
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .insert(row)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
