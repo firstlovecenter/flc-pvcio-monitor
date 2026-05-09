@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { format, formatDistanceToNow, getISOWeek, getYear, startOfISOWeek, endOfISOWeek, addWeeks } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { CATEGORIES, getActivitiesForLevel, getActivitiesByCategoryAndLevel } from '../data/activities'
-import { getRecentLogs, getWeeklySummary, addWeeklySummary, getISOWeekString } from '../utils/logs'
+import { getRecentLogs, getLogsByUnit, getWeeklySummary, addWeeklySummary, getISOWeekString } from '../utils/logs'
 import {
   getCurrentUser,
   logout,
@@ -70,13 +70,22 @@ export default function HomeScreen() {
     }
   }, [])
 
-  // Fetch recent logs whenever the user identity is ready
+  // Fetch recent logs whenever the user identity or active church changes
   useEffect(() => {
     if (!user?.userId) return
-    getRecentLogs(user.userId, 20)
-      .then(setRecentLogs)
-      .catch((err) => console.error('[HomeScreen] getRecentLogs:', err.message))
-  }, [user?.userId])
+    const church = user.activeChurch
+    if (church?.id) {
+      // Map level → column prefix used in activity_logs
+      const unitType = church.level === 'overseer' ? 'council' : church.level
+      getLogsByUnit(unitType, church.id)
+        .then((logs) => setRecentLogs(logs.slice(0, 20)))
+        .catch((err) => console.error('[HomeScreen] getLogsByUnit:', err.message))
+    } else {
+      getRecentLogs(user.userId, 20)
+        .then(setRecentLogs)
+        .catch((err) => console.error('[HomeScreen] getRecentLogs:', err.message))
+    }
+  }, [user?.userId, user?.activeChurch?.id])
 
   // Weekly summary prompt: show on Sunday (day 0) or Monday (day 1) if previous week has no summary
   useEffect(() => {
