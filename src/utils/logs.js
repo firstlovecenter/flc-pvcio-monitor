@@ -16,12 +16,14 @@ import { supabase } from './supabase'
  * @returns {string}
  */
 export function getISOWeekString(date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const day = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+  const d = new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+  )
+  const day = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - day)
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  const week = Math.ceil(((d - yearStart) / 86400000 + 1) / 7)
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`
 }
 
 // ── Read ──────────────────────────────────────────────────────────────────
@@ -41,6 +43,34 @@ export async function getRecentLogs(userId, limit = 20) {
     .limit(limit)
   if (error) throw error
   return data
+}
+
+/**
+ * Returns a Map<activityId, Set<dateStr>> for logs within a date range.
+ * Used by TimelineScreen to mark timeline entries as done.
+ *
+ * @param {string} userId
+ * @param {string} startDate — ISO date string 'yyyy-MM-dd'
+ * @param {string} endDate   — ISO date string 'yyyy-MM-dd'
+ * @returns {Promise<Map<string, Set<string>>>}
+ */
+export async function getLogsForTimeline(userId, startDate, endDate) {
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .select('activity_id, activity_date')
+    .eq('submitted_by_id', userId)
+    .eq('type', 'activity')
+    .gte('activity_date', startDate)
+    .lte('activity_date', endDate)
+  if (error) throw error
+
+  const map = new Map()
+  for (const row of data || []) {
+    if (!row.activity_date) continue
+    if (!map.has(row.activity_id)) map.set(row.activity_id, new Set())
+    map.get(row.activity_id).add(row.activity_date)
+  }
+  return map
 }
 
 /**
@@ -68,7 +98,7 @@ export async function getLogsByCategory(userId, categoryId) {
  * @returns {Promise<object[]>}
  */
 export async function getLogsByUnit(unitType, unitId) {
-  const column = `${unitType}_id`  // 'bacenta_id' | 'governorship_id' | 'council_id'
+  const column = `${unitType}_id` // 'bacenta_id' | 'governorship_id' | 'council_id'
   const { data, error } = await supabase
     .from('activity_logs')
     .select('*')
@@ -102,43 +132,49 @@ export async function addLog(user, entry, photoFile = null) {
 
   // Build stable unit IDs. We store every ancestor ID we have so
   // oversight dashboards can filter by any level.
-  const bacentaId      = active?.level === 'bacenta'      ? active.id : null
-  const governorshipId = active?.level === 'governorship' ? active.id
-                       : user.governorship?.id            || null
-  const councilId      = active?.level === 'oversight'    ? active.id
-                       : user.council?.id                 || null
-  const streamId       = user.stream?.id || null
+  const bacentaId = active?.level === 'bacenta' ? active.id : null
+  const governorshipId =
+    active?.level === 'governorship' ? active.id : user.governorship?.id || null
+  const councilId =
+    active?.level === 'oversight' ? active.id : user.council?.id || null
+  const streamId = user.stream?.id || null
 
   const row = {
     // Activity type + ISO week
-    type:              'activity',
-    iso_week:          getISOWeekString(new Date()),
+    type: 'activity',
+    iso_week: getISOWeekString(new Date()),
 
-    activity_id:       entry.activityId,
-    activity_name:     entry.activityName,
-    category:          entry.category,
-    level:             entry.level,
-    freq:              entry.freq,
+    activity_id: entry.activityId,
+    activity_name: entry.activityName,
+    category: entry.category,
+    level: entry.level,
+    freq: entry.freq,
+
+    // The date the activity happened (leader-selected, up to 4 weeks back).
+    // Used to match logs back to timeline entries.
+    activity_date: entry.activityDate || new Date().toISOString().slice(0, 10),
 
     // Unit IDs (unit-centric — the source of truth for reporting)
-    bacenta_id:        bacentaId,
-    governorship_id:   governorshipId,
-    council_id:        councilId,
-    stream_id:         streamId,
+    bacenta_id: bacentaId,
+    governorship_id: governorshipId,
+    council_id: councilId,
+    stream_id: streamId,
 
     // Unit display names (denormalised for fast display)
-    bacenta_name:      active?.level === 'bacenta'      ? active.name : null,
-    governorship_name: active?.level === 'governorship' ? active.name
-                     : user.governorship?.name          || null,
-    council_name:      active?.level === 'oversight'    ? active.name
-                     : user.council?.name               || null,
-    stream_name:       user.stream?.name || null,
+    bacenta_name: active?.level === 'bacenta' ? active.name : null,
+    governorship_name:
+      active?.level === 'governorship'
+        ? active.name
+        : user.governorship?.name || null,
+    council_name:
+      active?.level === 'oversight' ? active.name : user.council?.name || null,
+    stream_name: user.stream?.name || null,
 
     // Audit trail
-    submitted_by_id:   user.userId,
+    submitted_by_id: user.userId,
     submitted_by_name: `${user.firstName} ${user.lastName}`,
 
-    fields:    entry.fields,
+    fields: entry.fields,
     photo_url: photoUrl,
   }
 
@@ -175,7 +211,7 @@ export async function deleteLog(logId) {
  * @returns {Promise<string>} public URL
  */
 export async function uploadPhoto(userId, file) {
-  const ext      = file.name.split('.').pop()
+  const ext = file.name.split('.').pop()
   const filename = `${userId}/${Date.now()}.${ext}`
 
   const { error: uploadError } = await supabase.storage
@@ -199,28 +235,26 @@ export async function uploadPhoto(userId, file) {
  * @param {object} user — enriched user object from enrichUser()
  */
 export async function upsertProfile(user) {
-  const { error } = await supabase
-    .from('profiles')
-    .upsert(
-      {
-        id:                user.userId,
-        email:             user.email,
-        first_name:        user.firstName,
-        last_name:         user.lastName,
-        level:             user.level,
-        roles:             user.roles || [],
-        bacenta_id:        user.bacenta?.id        || null,
-        bacenta_name:      user.bacenta?.name      || null,
-        governorship_id:   user.governorship?.id   || null,
-        governorship_name: user.governorship?.name || null,
-        council_id:        user.council?.id        || null,
-        council_name:      user.council?.name      || null,
-        stream_id:         user.stream?.id         || null,
-        stream_name:       user.stream?.name       || null,
-        updated_at:        new Date().toISOString(),
-      },
-      { onConflict: 'id' },
-    )
+  const { error } = await supabase.from('profiles').upsert(
+    {
+      id: user.userId,
+      email: user.email,
+      first_name: user.firstName,
+      last_name: user.lastName,
+      level: user.level,
+      roles: user.roles || [],
+      bacenta_id: user.bacenta?.id || null,
+      bacenta_name: user.bacenta?.name || null,
+      governorship_id: user.governorship?.id || null,
+      governorship_name: user.governorship?.name || null,
+      council_id: user.council?.id || null,
+      council_name: user.council?.name || null,
+      stream_id: user.stream?.id || null,
+      stream_name: user.stream?.name || null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'id' },
+  )
   if (error) throw error
 }
 
@@ -251,28 +285,40 @@ export async function getWeeklySummary(userId, isoWeek) {
  * @param {object} summary — { logsThisWeek, missedActivities, note }
  * @returns {Promise<object>}
  */
-export async function addWeeklySummary(user, isoWeek, { logsThisWeek, missedActivities, note }) {
+export async function addWeeklySummary(
+  user,
+  isoWeek,
+  { logsThisWeek, missedActivities, note },
+) {
   const active = user.activeChurch || null
   const row = {
-    type:              'weekly_summary',
-    iso_week:          isoWeek,
-    activity_id:       'weekly_summary',
-    activity_name:     'Weekly Summary',
-    category:          'summary',
-    level:             user.level,
-    freq:              'weekly',
-    bacenta_id:        active?.level === 'bacenta'      ? active.id : null,
-    governorship_id:   active?.level === 'governorship' ? active.id : user.governorship?.id || null,
-    council_id:        active?.level === 'overseer'     ? active.id : user.council?.id      || null,
-    stream_id:         user.stream?.id || null,
-    bacenta_name:      active?.level === 'bacenta'      ? active.name : null,
-    governorship_name: active?.level === 'governorship' ? active.name : user.governorship?.name || null,
-    council_name:      active?.level === 'overseer'     ? active.name : user.council?.name      || null,
-    stream_name:       user.stream?.name || null,
-    submitted_by_id:   user.userId,
+    type: 'weekly_summary',
+    iso_week: isoWeek,
+    activity_id: 'weekly_summary',
+    activity_name: 'Weekly Summary',
+    category: 'summary',
+    level: user.level,
+    freq: 'weekly',
+    bacenta_id: active?.level === 'bacenta' ? active.id : null,
+    governorship_id:
+      active?.level === 'governorship'
+        ? active.id
+        : user.governorship?.id || null,
+    council_id:
+      active?.level === 'overseer' ? active.id : user.council?.id || null,
+    stream_id: user.stream?.id || null,
+    bacenta_name: active?.level === 'bacenta' ? active.name : null,
+    governorship_name:
+      active?.level === 'governorship'
+        ? active.name
+        : user.governorship?.name || null,
+    council_name:
+      active?.level === 'overseer' ? active.name : user.council?.name || null,
+    stream_name: user.stream?.name || null,
+    submitted_by_id: user.userId,
     submitted_by_name: `${user.firstName} ${user.lastName}`,
-    fields:            { logsThisWeek, missedActivities, note },
-    photo_url:         null,
+    fields: { logsThisWeek, missedActivities, note },
+    photo_url: null,
   }
   const { data, error } = await supabase
     .from('activity_logs')
@@ -282,4 +328,3 @@ export async function addWeeklySummary(user, isoWeek, { logsThisWeek, missedActi
   if (error) throw error
   return data
 }
-

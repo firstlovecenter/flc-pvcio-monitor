@@ -36,11 +36,18 @@ export default function WeeklySummaryModal({
     >
       <div
         className='w-full max-w-md rounded-3xl p-6 flex flex-col gap-5'
-        style={{ background: '#131929', border: '1px solid #252D4A', color: 'var(--text)' }}
+        style={{
+          background: '#131929',
+          border: '1px solid #252D4A',
+          color: 'var(--text)',
+        }}
       >
         {/* Header */}
         <div>
-          <p className='m-0 text-xs uppercase tracking-widest' style={{ color: 'var(--muted)' }}>
+          <p
+            className='m-0 text-xs uppercase tracking-widest'
+            style={{ color: 'var(--muted)' }}
+          >
             {isoWeek} · Weekly Summary
           </p>
           <h2 className='m-0 mt-1 text-xl font-semibold'>{weekLabel}</h2>
@@ -50,10 +57,16 @@ export default function WeeklySummaryModal({
         <div className='flex flex-col gap-2'>
           <div
             className='flex items-center gap-2 rounded-2xl px-4 py-3'
-            style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.25)' }}
+            style={{
+              background: 'rgba(52,211,153,0.1)',
+              border: '1px solid rgba(52,211,153,0.25)',
+            }}
           >
             <span style={{ color: '#34D399' }}>✓</span>
-            <p className='m-0 text-sm font-semibold' style={{ color: '#34D399' }}>
+            <p
+              className='m-0 text-sm font-semibold'
+              style={{ color: '#34D399' }}
+            >
               {logsCount} {logsCount === 1 ? 'activity' : 'activities'} logged
             </p>
           </div>
@@ -62,17 +75,25 @@ export default function WeeklySummaryModal({
             <div
               key={name}
               className='flex items-center gap-2 rounded-2xl px-4 py-3'
-              style={{ background: 'rgba(248,112,96,0.08)', border: '1px solid rgba(248,112,96,0.2)' }}
+              style={{
+                background: 'rgba(248,112,96,0.08)',
+                border: '1px solid rgba(248,112,96,0.2)',
+              }}
             >
               <span style={{ color: '#F87060' }}>✗</span>
-              <p className='m-0 text-sm' style={{ color: '#F87060' }}>{name} — not logged</p>
+              <p className='m-0 text-sm' style={{ color: '#F87060' }}>
+                {name} — not logged
+              </p>
             </div>
           ))}
         </div>
 
         {/* Free-text */}
         <div className='flex flex-col gap-2'>
-          <label className='text-xs font-semibold uppercase tracking-widest' style={{ color: 'var(--muted)' }}>
+          <label
+            className='text-xs font-semibold uppercase tracking-widest'
+            style={{ color: 'var(--muted)' }}
+          >
             How did your week go?
           </label>
           <textarea
@@ -95,7 +116,11 @@ export default function WeeklySummaryModal({
             type='button'
             onClick={onDismiss}
             className='flex-1 rounded-2xl py-3 text-sm font-semibold cursor-pointer'
-            style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--muted)' }}
+            style={{
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              color: 'var(--muted)',
+            }}
           >
             Remind me later
           </button>

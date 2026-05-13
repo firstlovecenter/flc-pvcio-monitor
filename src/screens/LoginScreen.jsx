@@ -21,7 +21,7 @@ export default function LoginScreen() {
     setLoading(true)
     try {
       await loginWithCredentials(email, password)
-      navigate('/home')
+      navigate('/timeline')
     } catch (err) {
       setError(err.message || 'Login failed. Check your credentials.')
     } finally {
@@ -33,7 +33,7 @@ export default function LoginScreen() {
     // For demo mode store a fake token so getCurrentUser() works downstream
     const user = enrichUser(DEMO_USERS[role])
     localStorage.setItem('demoUser', JSON.stringify(user))
-    navigate('/home')
+    navigate('/timeline')
   }
 
   return (

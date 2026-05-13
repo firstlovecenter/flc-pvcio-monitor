@@ -23,7 +23,9 @@ export default function SelectField({ field, value, onChange, error }) {
               className='w-full rounded-2xl py-4 px-5 text-left text-base font-semibold cursor-pointer transition-all'
               style={{
                 background: selected ? 'rgba(79,127,255,0.2)' : 'var(--card)',
-                border: selected ? '1.5px solid var(--accent)' : '1px solid var(--border)',
+                border: selected
+                  ? '1.5px solid var(--accent)'
+                  : '1px solid var(--border)',
                 color: selected ? 'var(--accent)' : 'var(--text)',
               }}
             >
@@ -34,7 +36,11 @@ export default function SelectField({ field, value, onChange, error }) {
         })}
       </div>
 
-      {error && <p className='text-xs mt-0.5' style={{ color: '#f87171' }}>{error}</p>}
+      {error && (
+        <p className='text-xs mt-0.5' style={{ color: '#f87171' }}>
+          {error}
+        </p>
+      )}
     </div>
   )
 }
