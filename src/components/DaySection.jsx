@@ -40,7 +40,11 @@ export default function DaySection({ date, entries, today, onTap }) {
             width: 5,
             height: 5,
             borderRadius: '50%',
-            background: isToday ? 'var(--accent)' : isPast ? '#292E4A' : '#3A4060',
+            background: isToday
+              ? 'var(--accent)'
+              : isPast
+                ? '#292E4A'
+                : '#3A4060',
             flexShrink: 0,
             display: 'inline-block',
           }}

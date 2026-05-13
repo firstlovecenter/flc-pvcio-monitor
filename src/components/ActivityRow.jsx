@@ -75,11 +75,34 @@ export default function ActivityRow({ entry, onTap, today }) {
   }
 
   const circleStyles = {
-    done: { ...circleBase, background: '#34D399', border: '1.5px solid #34D399', color: '#fff' },
-    missed: { ...circleBase, border: '1.5px solid #F87060', background: 'transparent', color: '#F87060' },
-    today: { ...circleBase, border: '1.5px solid #4F7FFF', background: 'transparent' },
-    upcoming: { ...circleBase, border: '1.5px solid #2E3860', background: 'transparent' },
-    tbc: { ...circleBase, border: '1.5px solid #1E2540', background: 'transparent', color: '#2E3860' },
+    done: {
+      ...circleBase,
+      background: '#34D399',
+      border: '1.5px solid #34D399',
+      color: '#fff',
+    },
+    missed: {
+      ...circleBase,
+      border: '1.5px solid #F87060',
+      background: 'transparent',
+      color: '#F87060',
+    },
+    today: {
+      ...circleBase,
+      border: '1.5px solid #4F7FFF',
+      background: 'transparent',
+    },
+    upcoming: {
+      ...circleBase,
+      border: '1.5px solid #2E3860',
+      background: 'transparent',
+    },
+    tbc: {
+      ...circleBase,
+      border: '1.5px solid #1E2540',
+      background: 'transparent',
+      color: '#2E3860',
+    },
   }
 
   const circleContent = {
@@ -92,7 +115,13 @@ export default function ActivityRow({ entry, onTap, today }) {
 
   // ── Name text ────────────────────────────────────────────────────
   const nameStyles = {
-    done: { fontSize: 12, fontWeight: 500, color: '#4B6060', textDecoration: 'line-through', textDecorationColor: '#2D4D4D' },
+    done: {
+      fontSize: 12,
+      fontWeight: 500,
+      color: '#4B6060',
+      textDecoration: 'line-through',
+      textDecorationColor: '#2D4D4D',
+    },
     missed: { fontSize: 12, fontWeight: 500, color: 'var(--coral)' },
     today: { fontSize: 12, fontWeight: 500, color: 'var(--text)' },
     upcoming: { fontSize: 12, fontWeight: 500, color: 'var(--text)' },
@@ -110,28 +139,54 @@ export default function ActivityRow({ entry, onTap, today }) {
     }
     if (status === 'done') {
       return (
-        <span style={{ ...chipBase, background: 'rgba(52,211,153,.1)', color: '#34D399' }}>
+        <span
+          style={{
+            ...chipBase,
+            background: 'rgba(52,211,153,.1)',
+            color: '#34D399',
+          }}
+        >
           done
         </span>
       )
     }
     if (status === 'missed') {
       return (
-        <span style={{ ...chipBase, background: 'rgba(248,112,96,.1)', color: '#F87060' }}>
+        <span
+          style={{
+            ...chipBase,
+            background: 'rgba(248,112,96,.1)',
+            color: '#F87060',
+          }}
+        >
           not logged
         </span>
       )
     }
     if (status === 'tbc') {
       return (
-        <span style={{ ...chipBase, background: 'rgba(255,255,255,.03)', color: '#3A4060', border: '0.5px dashed #2E3860' }}>
+        <span
+          style={{
+            ...chipBase,
+            background: 'rgba(255,255,255,.03)',
+            color: '#3A4060',
+            border: '0.5px dashed #2E3860',
+          }}
+        >
           tbc
         </span>
       )
     }
     // upcoming or today — show "form" chip
     return (
-      <span style={{ ...chipBase, background: 'rgba(79,127,255,.1)', color: '#7FA8FF', border: '0.5px solid rgba(79,127,255,.2)' }}>
+      <span
+        style={{
+          ...chipBase,
+          background: 'rgba(79,127,255,.1)',
+          color: '#7FA8FF',
+          border: '0.5px solid rgba(79,127,255,.2)',
+        }}
+      >
         form
       </span>
     )
@@ -166,7 +221,14 @@ export default function ActivityRow({ entry, onTap, today }) {
         <div style={nameStyles[status]}>
           {status === 'tbc' ? 'Calendar slot — TBC' : entry.activityName}
         </div>
-        <div style={{ fontSize: 10, color: '#4B5680', marginTop: 2, fontFamily: 'var(--mono)' }}>
+        <div
+          style={{
+            fontSize: 10,
+            color: '#4B5680',
+            marginTop: 2,
+            fontFamily: 'var(--mono)',
+          }}
+        >
           {metaText()}
         </div>
       </div>

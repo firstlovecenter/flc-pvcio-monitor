@@ -228,7 +228,8 @@ export default function ActivityFormScreen() {
         <div>
           <p className='m-0 text-base font-semibold'>Log activity</p>
           <p className='m-0 text-xs' style={{ color: 'var(--muted)' }}>
-            {category?.label} · {format(parseISO(activityDate), 'EEE d MMM yyyy')}
+            {category?.label} ·{' '}
+            {format(parseISO(activityDate), 'EEE d MMM yyyy')}
           </p>
         </div>
       </header>
@@ -295,10 +296,7 @@ export default function ActivityFormScreen() {
                 colorScheme: 'dark',
               }}
             />
-            <p
-              className='m-0 mt-2 text-xs'
-              style={{ color: 'var(--muted)' }}
-            >
+            <p className='m-0 mt-2 text-xs' style={{ color: 'var(--muted)' }}>
               You can backdate up to 4 weeks.
             </p>
           </div>
@@ -339,7 +337,9 @@ export default function ActivityFormScreen() {
         <div
           className='fixed bottom-8 left-1/2 -translate-x-1/2 rounded-2xl px-6 py-3 text-sm font-semibold shadow-xl'
           style={{
-            background: toast.includes('wrong') ? 'var(--coral)' : 'var(--green)',
+            background: toast.includes('wrong')
+              ? 'var(--coral)'
+              : 'var(--green)',
             color: '#0C0F1A',
             zIndex: 50,
           }}

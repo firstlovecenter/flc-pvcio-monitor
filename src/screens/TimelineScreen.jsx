@@ -26,10 +26,10 @@ const WEEKS_BACK = 2
 
 // ── Level badge ──────────────────────────────────────────────────────────
 const LEVEL_BADGE = {
-  bacenta:     { label: 'Bacenta',     color: '#7fa8ff' },
-  governorship:{ label: 'Governor',    color: '#c4b5fd' },
-  overseer:    { label: 'Overseer',    color: '#fcd34d' },
-  bishop:      { label: 'Bishop',      color: '#fcd34d' },
+  bacenta: { label: 'Bacenta', color: '#7fa8ff' },
+  governorship: { label: 'Governor', color: '#c4b5fd' },
+  overseer: { label: 'Overseer', color: '#fcd34d' },
+  bishop: { label: 'Bishop', color: '#fcd34d' },
 }
 
 function levelBadge(level) {
@@ -111,7 +111,11 @@ export default function TimelineScreen() {
         'yyyy-MM-dd',
       )
 
-      const loggedMap = await getLogsForTimeline(user.userId, rangeStart, rangeEnd)
+      const loggedMap = await getLogsForTimeline(
+        user.userId,
+        rangeStart,
+        rangeEnd,
+      )
       const timeline = buildTimeline(user, [], loggedMap, WEEKS_AHEAD)
       setEntries(timeline)
     } catch (err) {
@@ -162,11 +166,15 @@ export default function TimelineScreen() {
 
   const unitParts = [
     user.bacenta?.name || (user.level === 'bacenta' ? user.unitName : null),
-    user.governorship?.name || (user.level === 'governorship' ? user.unitName : null),
-    user.level === 'overseer' || user.level === 'bishop' ? user.unitName || user.council?.name : null,
+    user.governorship?.name ||
+      (user.level === 'governorship' ? user.unitName : null),
+    user.level === 'overseer' || user.level === 'bishop'
+      ? user.unitName || user.council?.name
+      : null,
   ].filter(Boolean)
 
-  const unitDisplay = unitParts.length > 0 ? unitParts.join(' · ') : user.unitName || ''
+  const unitDisplay =
+    unitParts.length > 0 ? unitParts.join(' · ') : user.unitName || ''
 
   return (
     <div
@@ -195,7 +203,9 @@ export default function TimelineScreen() {
       >
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
+            <span
+              style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}
+            >
               {displayName}
             </span>
             <span
@@ -280,7 +290,7 @@ export default function TimelineScreen() {
                   />
                 )}
                 {!isFirstWeek && isCurrentWeek && (
-                  <WeekSeparator label="Current week" />
+                  <WeekSeparator label='Current week' />
                 )}
 
                 {/* Week header with progress */}
@@ -296,10 +306,7 @@ export default function TimelineScreen() {
                   const dayEntries = week.dayMap.get(dayDate) || []
                   const isThisDay = dayDate === TODAY
                   return (
-                    <div
-                      key={dayDate}
-                      ref={isThisDay ? todayRef : undefined}
-                    >
+                    <div key={dayDate} ref={isThisDay ? todayRef : undefined}>
                       <DaySection
                         date={dayDate}
                         entries={dayEntries}

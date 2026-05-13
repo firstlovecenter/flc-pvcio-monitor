@@ -8,7 +8,14 @@
 // Phase 1 uses only freq='weekly' activities.
 // Phase 2: just pass scheduledEntries into buildTimeline — zero UI changes.
 
-import { startOfISOWeek, addWeeks, addDays, format, getISOWeek, getISOWeekYear } from 'date-fns'
+import {
+  startOfISOWeek,
+  addWeeks,
+  addDays,
+  format,
+  getISOWeek,
+  getISOWeekYear,
+} from 'date-fns'
 import { ACTIVITIES } from '../data/activities'
 
 // Monday=1 … Sunday=7  (ISO day numbers)
@@ -54,7 +61,9 @@ export function getMondayOfISOWeek(weekStr) {
  */
 export function getDaysOfISOWeek(weekStr) {
   const monday = getMondayOfISOWeek(weekStr)
-  return Array.from({ length: 7 }, (_, i) => format(addDays(monday, i), 'yyyy-MM-dd'))
+  return Array.from({ length: 7 }, (_, i) =>
+    format(addDays(monday, i), 'yyyy-MM-dd'),
+  )
 }
 
 /**
@@ -115,9 +124,7 @@ export function generateRecurring(user, weeksAhead = 12, weeksBack = 2) {
 
   const weeklyActivities = ACTIVITIES.filter(
     (a) =>
-      a.appliesTo.includes(user.level) &&
-      a.freq === 'weekly' &&
-      !a.monitorOnly,
+      a.appliesTo.includes(user.level) && a.freq === 'weekly' && !a.monitorOnly,
   )
 
   const entries = []
