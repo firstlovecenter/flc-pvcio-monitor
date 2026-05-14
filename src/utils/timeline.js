@@ -5,7 +5,12 @@
 //   recurring  — generated client-side from activities.js rules (Phase 1)
 //   scheduled  — from Supabase scheduled_activities table (Phase 2)
 //
-// Phase 1 uses only freq='weekly' activities.
+// Phase 1 generates both freq='weekly' and freq='cycle' activities, applying:
+//   - cycleWeek matching for cycle activities
+//   - weekOverrides for activities that change in specific cycle weeks
+//   - streamFilter for stream-specific activities
+//   - streamRotation for activities that rotate by stream each week
+//   - visibility, interaction, specialEvent forwarded to timeline entries
 // Phase 2: just pass scheduledEntries into buildTimeline — zero UI changes.
 
 import {
@@ -27,6 +32,36 @@ const DAY_TO_ISO = {
   Friday: 5,
   Saturday: 6,
   Sunday: 7,
+}
+
+// ── Cycle week calculation ────────────────────────────────────────────────
+// Week 1 of this cycle starts May 12, 2026 (Tuesday).
+// The ISO Monday anchor for Week 1 is May 11, 2026.
+
+/** Monday of cycle Week 1. */
+export const CYCLE_START = new Date('2026-05-11')
+
+/**
+ * Returns the cycle week number (1–6) for a given Monday Date.
+ * Cycles repeat: week 7 = week 1, week 8 = week 2, etc.
+ */
+export function getCycleWeekForMonday(monday) {
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000
+  const weekOffset = Math.round((monday - CYCLE_START) / msPerWeek)
+  return ((weekOffset % 6) + 6) % 6 + 1 // always 1–6
+}
+
+/** Returns the current cycle week (1–6). */
+export function getCurrentCycleWeek() {
+  return getCycleWeekForMonday(startOfISOWeek(new Date()))
+}
+
+/**
+ * Maps an arbitrary 1-based week number to a cycle week (1–6).
+ * Useful for infinite-scroll timelines that go beyond week 6.
+ */
+export function cycleWeekForWeekNum(weekNum) {
+  return ((weekNum - 1) % 6) + 1
 }
 
 /** Returns ISO week string like '2026-W20'. */
@@ -107,11 +142,41 @@ export function weekSeparatorLabel(weekStr, weekIndex) {
   return `Week ${weekIndex} · ${range}`
 }
 
+// ── Stream + week visibility ──────────────────────────────────────────────
+
+/**
+ * Returns false if the activity (possibly with overrides applied) should be
+ * hidden for this user in this cycle week due to stream filtering.
+ *
+ * @param {object} activity   — raw activity from ACTIVITIES (before overrides)
+ * @param {object} user       — enriched user object
+ * @param {number} cycleWeek  — 1–6
+ */
+function isVisibleToUser(activity, user, cycleWeek) {
+  const userStream = user.stream?.name || null
+
+  // streamFilter: only show to matching streams
+  if (activity.streamFilter && activity.streamFilter.length > 0) {
+    if (!userStream || !activity.streamFilter.includes(userStream)) return false
+  }
+
+  // streamRotation: show only on weeks where the user's stream is listed
+  if (activity.streamRotation) {
+    const streamsThisWeek = activity.streamRotation[cycleWeek] || []
+    if (!userStream || !streamsThisWeek.includes(userStream)) return false
+  }
+
+  return true
+}
+
 // ── Generate recurring entries ────────────────────────────────────────────
 
 /**
  * Generates recurring timeline entries for the user's level.
- * Phase 1: only freq='weekly', non-monitorOnly activities.
+ * Handles both freq='weekly' and freq='cycle' activities, including:
+ *   - weekOverrides applied per cycle week
+ *   - streamFilter and streamRotation visibility rules
+ *   - interaction, visibility, specialEvent forwarded to entries
  *
  * @param {object} user        — enriched user from getCurrentUser()
  * @param {number} weeksAhead  — how many future weeks to generate
@@ -122,17 +187,39 @@ export function generateRecurring(user, weeksAhead = 12, weeksBack = 2) {
   const today = new Date()
   const currentMonday = startOfISOWeek(today)
 
-  const weeklyActivities = ACTIVITIES.filter(
-    (a) =>
-      a.appliesTo.includes(user.level) && a.freq === 'weekly' && !a.monitorOnly,
+  // Bishop uses the same activity list as overseer
+  const levelToUse = user.level === 'bishop' ? 'overseer' : user.level
+
+  const allActivities = ACTIVITIES.filter((a) =>
+    a.appliesTo.includes(levelToUse),
   )
 
   const entries = []
 
   for (let w = -weeksBack; w < weeksAhead; w++) {
     const monday = addWeeks(currentMonday, w)
+    const cycleWeek = getCycleWeekForMonday(monday)
 
-    for (const activity of weeklyActivities) {
+    for (const baseActivity of allActivities) {
+      // Cycle activities: only show in the matching cycle week
+      // (streamRotation activities use freq:'weekly' but filtered per week below)
+      if (
+        baseActivity.freq === 'cycle' &&
+        !baseActivity.streamRotation &&
+        baseActivity.cycleWeek !== cycleWeek
+      ) {
+        continue
+      }
+
+      // Stream visibility (applies before overrides so base activity filters work)
+      if (!isVisibleToUser(baseActivity, user, cycleWeek)) continue
+
+      // Apply week overrides — shallow merge so overridden fields win
+      const override = baseActivity.weekOverrides?.[cycleWeek] || {}
+      const activity = { ...baseActivity, ...override }
+      // If override explicitly provides fields (even []), use it
+      if ('fields' in override) activity.fields = override.fields
+
       const isoDay = DAY_TO_ISO[activity.day]
       if (!isoDay) continue
 
@@ -141,16 +228,19 @@ export function generateRecurring(user, weeksAhead = 12, weeksBack = 2) {
       const week = isoWeekStr(date)
 
       entries.push({
-        id: `recurring_${activity.id}_${dateStr}`,
+        id: `recurring_${baseActivity.id}_${dateStr}`,
         type: 'recurring',
-        activityId: activity.id,
+        activityId: baseActivity.id,
         activityName: activity.name,
         category: activity.category,
         level: user.level,
         date: dateStr,
         day: format(date, 'EEE'),
         isoWeek: week,
-        interaction: 'form',
+        cycleWeek,
+        interaction: activity.interaction || 'form',
+        visibility: activity.visibility || 'lead',
+        specialEvent: activity.specialEvent || false,
         fields: activity.fields || [],
         logId: null,
         done: false,

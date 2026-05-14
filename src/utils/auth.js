@@ -102,6 +102,9 @@ function normalizeChurchContexts(member) {
 }
 
 function localFallbackChurchContexts(payload) {
+  // churchScopes comes from the JWT (new API format)
+  const scopes = payload.churchScopes || {}
+
   return uniqueChurchContexts(
     [
       payload?.stream?.id
@@ -136,6 +139,39 @@ function localFallbackChurchContexts(payload) {
             source: 'Local Bacenta',
           }
         : null,
+      // Fallback: JWT churchScopes (new API shape)
+      scopes.leadsBacentaOf?.id
+        ? {
+            id: scopes.leadsBacentaOf.id,
+            name: scopes.leadsBacentaOf.name || 'Bacenta',
+            level: 'bacenta',
+            source: 'JWT churchScopes',
+          }
+        : null,
+      scopes.leadsGovernorshipOf?.id
+        ? {
+            id: scopes.leadsGovernorshipOf.id,
+            name: scopes.leadsGovernorshipOf.name || 'Governorship',
+            level: 'governorship',
+            source: 'JWT churchScopes',
+          }
+        : null,
+      scopes.leadsCouncilOf?.id
+        ? {
+            id: scopes.leadsCouncilOf.id,
+            name: scopes.leadsCouncilOf.name || 'Council',
+            level: 'overseer',
+            source: 'JWT churchScopes',
+          }
+        : null,
+      scopes.leadsStreamOf?.id
+        ? {
+            id: scopes.leadsStreamOf.id,
+            name: scopes.leadsStreamOf.name || 'Stream',
+            level: 'bishop',
+            source: 'JWT churchScopes',
+          }
+        : null,
     ].filter(Boolean),
   ).filter((ctx) => hasActivities(ctx.level))
 }
@@ -157,7 +193,20 @@ export function getCurrentUser() {
   const token = localStorage.getItem('accessToken')
   if (token) {
     const payload = decodeJWT(token)
-    if (payload) return enrichUser(payload)
+    if (payload) {
+      // Merge membership persisted at login so church context survives page reloads.
+      // The JWT itself only carries churchScopes; the flat bacenta/governorship/
+      // council/stream fields come from the login response's membership object.
+      const membershipRaw = localStorage.getItem('membership')
+      const membership = membershipRaw ? JSON.parse(membershipRaw) : null
+      return enrichUser({
+        ...payload,
+        bacenta:      membership?.bacenta      || null,
+        governorship: membership?.governorship || null,
+        council:      membership?.council      || null,
+        stream:       membership?.stream       || null,
+      })
+    }
   }
   // Demo mode (no real token)
   const demo = localStorage.getItem('demoUser')
@@ -273,10 +322,23 @@ export async function loginWithCredentials(email, password) {
 
   const payload = decodeJWT(data.tokens.accessToken)
   const { id, ...userFields } = data.user
+
+  // Persist membership so getCurrentUser() can reconstruct church context
+  // on page reload (the JWT alone only carries churchScopes, not the flat
+  // bacenta/governorship/council/stream objects enrichUser expects).
+  if (data.membership) {
+    localStorage.setItem('membership', JSON.stringify(data.membership))
+  }
+
   const user = enrichUser({
     ...payload,
     ...userFields,
-    userId: payload.userId ?? id,
+    userId:       payload.userId ?? id,
+    // Merge membership so localFallbackChurchContexts finds the right unit IDs
+    bacenta:      data.membership?.bacenta      || null,
+    governorship: data.membership?.governorship || null,
+    council:      data.membership?.council      || null,
+    stream:       data.membership?.stream       || null,
   })
 
   // Sync the leader's profile to Supabase (upsert — safe to call every login)
@@ -295,4 +357,5 @@ export function logout() {
   localStorage.removeItem('accessToken')
   localStorage.removeItem('refreshToken')
   localStorage.removeItem('demoUser')
+  localStorage.removeItem('membership')
 }
