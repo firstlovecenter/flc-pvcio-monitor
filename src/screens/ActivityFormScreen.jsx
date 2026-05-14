@@ -1,6 +1,18 @@
+// src/screens/ActivityFormScreen.jsx
+// Full-screen form for logging an activity.
+// Replaces LogFormScreen — now accessed from the timeline.
+//
+// Route: /log/:actId?date=yyyy-MM-dd
+//
+// Differences from old LogFormScreen:
+//   - Reads `date` query param → default activityDate
+//   - Leader can change date up to 4 weeks back
+//   - Stores activityDate in addLog entry
+//   - Navigates to /timeline on success
+
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { format } from 'date-fns'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { format, subWeeks, isAfter, isBefore, parseISO } from 'date-fns'
 import { getActivityById, getCategoryById } from '../data/activities'
 import { getCurrentUser } from '../utils/auth'
 import { addLog } from '../utils/logs'
@@ -11,13 +23,16 @@ import NamesField from '../components/fields/NamesField'
 import IssueTypeField from '../components/fields/IssueTypeField'
 import SelectField from '../components/fields/SelectField'
 
+const TODAY = format(new Date(), 'yyyy-MM-dd')
+const FOUR_WEEKS_AGO = format(subWeeks(new Date(), 4), 'yyyy-MM-dd')
+
 const FREQ_LABELS = {
   weekly: 'Weekly',
   cycle: 'This 6-week cycle',
 }
 
+// ── Field renderer ────────────────────────────────────────────────────────
 function FieldRenderer({ field, value, onChange, error, activity, userLevel }) {
-  // Resolve 'minimumByLevel' flagBelow to the actual threshold for the user's level
   const resolvedField =
     field.flagBelow === 'minimumByLevel' && activity?.minimumByLevel
       ? { ...field, flagBelow: activity.minimumByLevel[userLevel] ?? 0 }
@@ -73,15 +88,25 @@ function FieldRenderer({ field, value, onChange, error, activity, userLevel }) {
   }
 }
 
-export default function LogFormScreen() {
+// ── Main component ────────────────────────────────────────────────────────
+export default function ActivityFormScreen() {
   const navigate = useNavigate()
   const { actId } = useParams()
+  const [searchParams] = useSearchParams()
 
   const activity = getActivityById(actId)
   const category = activity ? getCategoryById(activity.category) : null
   const user = getCurrentUser()
 
+  // Default activity date from route param, fallback to today
+  const paramDate = searchParams.get('date')
+  const defaultDate =
+    paramDate && paramDate >= FOUR_WEEKS_AGO && paramDate <= TODAY
+      ? paramDate
+      : TODAY
+
   const [values, setValues] = useState({})
+  const [activityDate, setActivityDate] = useState(defaultDate)
   const [errors, setErrors] = useState({})
   const [toast, setToast] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -100,6 +125,11 @@ export default function LogFormScreen() {
   function handleChange(fieldId, val) {
     setValues((prev) => ({ ...prev, [fieldId]: val }))
     if (errors[fieldId]) setErrors((prev) => ({ ...prev, [fieldId]: null }))
+  }
+
+  function handleDateChange(e) {
+    const val = e.target.value
+    if (val >= FOUR_WEEKS_AGO && val <= TODAY) setActivityDate(val)
   }
 
   function validate() {
@@ -132,7 +162,6 @@ export default function LogFormScreen() {
 
     setSubmitting(true)
     try {
-      // Pull the photo file out of fields — addLog takes it as a separate arg
       const { photo: photoValue, ...fieldValues } = values
       const photoFile = photoValue?.file || null
 
@@ -144,13 +173,14 @@ export default function LogFormScreen() {
           category: activity.category,
           level: user.level,
           freq: activity.freq,
+          activityDate,
           fields: fieldValues,
         },
         photoFile,
       )
 
-      setToast('Logged!')
-      setTimeout(() => navigate('/home'), 900)
+      setToast('Logged! ✓')
+      setTimeout(() => navigate('/timeline'), 900)
     } catch (err) {
       console.error('addLog failed:', err)
       setToast('Something went wrong — try again')
@@ -169,6 +199,8 @@ export default function LogFormScreen() {
         background:
           'radial-gradient(130% 90% at 50% -10%, #1A2450 0%, #101528 50%, #0C0F1A 100%)',
         color: 'var(--text)',
+        maxWidth: 480,
+        margin: '0 auto',
       }}
     >
       {/* Sticky header */}
@@ -181,7 +213,7 @@ export default function LogFormScreen() {
       >
         <button
           type='button'
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/timeline')}
           className='flex items-center justify-center rounded-xl cursor-pointer flex-shrink-0'
           style={{
             width: 36,
@@ -196,7 +228,8 @@ export default function LogFormScreen() {
         <div>
           <p className='m-0 text-base font-semibold'>Log activity</p>
           <p className='m-0 text-xs' style={{ color: 'var(--muted)' }}>
-            {category?.label} · {format(new Date(), 'EEE d MMM yyyy')}
+            {category?.label} ·{' '}
+            {format(parseISO(activityDate), 'EEE d MMM yyyy')}
           </p>
         </div>
       </header>
@@ -235,6 +268,39 @@ export default function LogFormScreen() {
             )}
           </div>
 
+          {/* Activity date picker */}
+          <div
+            className='rounded-2xl p-4'
+            style={{
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+            }}
+          >
+            <label
+              className='block text-xs font-semibold tracking-widest uppercase mb-2'
+              style={{ color: 'var(--muted)' }}
+            >
+              Activity date
+            </label>
+            <input
+              type='date'
+              value={activityDate}
+              min={FOUR_WEEKS_AGO}
+              max={TODAY}
+              onChange={handleDateChange}
+              className='w-full rounded-xl px-4 py-3 text-sm outline-none'
+              style={{
+                background: 'var(--bg2)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
+                colorScheme: 'dark',
+              }}
+            />
+            <p className='m-0 mt-2 text-xs' style={{ color: 'var(--muted)' }}>
+              You can backdate up to 4 weeks.
+            </p>
+          </div>
+
           {/* Fields */}
           <form onSubmit={handleSubmit} className='flex flex-col gap-5'>
             {activity.fields.map((field) => (
@@ -270,7 +336,13 @@ export default function LogFormScreen() {
       {toast && (
         <div
           className='fixed bottom-8 left-1/2 -translate-x-1/2 rounded-2xl px-6 py-3 text-sm font-semibold shadow-xl'
-          style={{ background: 'var(--green)', color: '#0C0F1A', zIndex: 50 }}
+          style={{
+            background: toast.includes('wrong')
+              ? 'var(--coral)'
+              : 'var(--green)',
+            color: '#0C0F1A',
+            zIndex: 50,
+          }}
         >
           {toast}
         </div>

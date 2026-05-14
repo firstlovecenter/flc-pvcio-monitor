@@ -3,6 +3,7 @@
 // Wire real auth by replacing getCurrentUser() body
 
 import { getActivitiesForLevel } from '../data/activities'
+import { fetchMemberLeaderships } from './neo4j'
 
 const LEAD_CHURCHES_URL =
   import.meta.env.VITE_LEAD_CHURCHES_API_URL ||
@@ -117,17 +118,16 @@ export function getCurrentUser() {
 
 export function enrichUser(payload) {
   const level = getLevelFromRoles(payload.roles || []);
-  const unitName =
-    payload.bacenta?.name ||
-    payload.governorship?.name ||
-    payload.council?.name ||
-    payload.stream?.name || '';
+  // membership fields (bacenta/governorship/council/stream) are no longer in
+  // the JWT — they come from Neo4j via resolveChurchContextsForUser().
+  // enrichUser() stays synchronous; churchContexts starts empty and is
+  // populated by the async resolution step after login.
   const churchContexts = localFallbackChurchContexts(payload)
   const activeChurch = churchContexts[0] || null
   return {
     ...payload,
     level: activeChurch?.level || level,
-    unitName: activeChurch?.name || unitName,
+    unitName: activeChurch?.name || '',
     isAdmin: isAdmin(payload.roles || []),
     churchContexts,
     activeChurch,
@@ -156,24 +156,32 @@ export async function fetchLeadChurchesByEmail(email, accessToken) {
 }
 
 export async function resolveChurchContextsForUser(user) {
+  // ── Leadership contexts (leadsCouncil, leadsGovernorship, leadsBacenta)
+  //   These are in the JWT payload — read them directly, no network call.
+  const leadershipContexts = normalizeChurchContexts(user)
+
+  // ── Membership hierarchy (bacenta → governorship → council → stream)
+  //   This is being removed from the JWT; Neo4j is now the source of truth.
+  //   Fall back to any membership fields still present in the JWT payload
+  //   (covers the transition period and dev mode).
+  let member = null
+  let membershipContexts = []
   try {
-    const token = localStorage.getItem('accessToken')
-    const leadChurchesPayload = await fetchLeadChurchesByEmail(user.email, token)
-    const churchContexts = normalizeChurchContexts(leadChurchesPayload)
-    if (churchContexts.length) {
-      return {
-        member: leadChurchesPayload?.user || null,
-        churchContexts,
-        activeChurch: churchContexts[0],
-      }
+    member = await fetchMemberLeaderships(user.email)
+    if (member) {
+      membershipContexts = localFallbackChurchContexts(member)
     }
   } catch {
-    // fall back to local user payload if graphql is unavailable
+    membershipContexts = localFallbackChurchContexts(user)
   }
 
-  const churchContexts = localFallbackChurchContexts(user)
+  const churchContexts = uniqueChurchContexts([
+    ...leadershipContexts,
+    ...membershipContexts,
+  ]).filter((ctx) => hasActivities(ctx.level))
+
   return {
-    member: null,
+    member,
     churchContexts,
     activeChurch: churchContexts[0] || null,
   }

@@ -48,7 +48,11 @@ export default function AttendanceField({ field, value, onChange, error }) {
         className='flex items-center rounded-2xl overflow-hidden'
         style={{
           background: 'var(--card)',
-          border: error ? '1px solid #f87171' : isBelowThreshold ? '1px solid #FBBF24' : '1px solid var(--border)',
+          border: error
+            ? '1px solid #f87171'
+            : isBelowThreshold
+              ? '1px solid #FBBF24'
+              : '1px solid var(--border)',
         }}
       >
         {/* Decrement */}
@@ -56,13 +60,20 @@ export default function AttendanceField({ field, value, onChange, error }) {
           type='button'
           onClick={decrement}
           className='flex items-center justify-center text-2xl font-light select-none cursor-pointer flex-shrink-0'
-          style={{ width: 64, height: 64, color: count > 0 ? 'var(--text)' : 'var(--border)' }}
+          style={{
+            width: 64,
+            height: 64,
+            color: count > 0 ? 'var(--text)' : 'var(--border)',
+          }}
         >
           −
         </button>
 
         {/* Centre — tap to type */}
-        <div className='flex-1 flex items-center justify-center' style={{ minHeight: 64 }}>
+        <div
+          className='flex-1 flex items-center justify-center'
+          style={{ minHeight: 64 }}
+        >
           {editing ? (
             <input
               ref={inputRef}
@@ -112,7 +123,11 @@ export default function AttendanceField({ field, value, onChange, error }) {
           Target is {threshold} — you're below the minimum
         </p>
       )}
-      {error && <p className='text-xs mt-0.5' style={{ color: '#f87171' }}>{error}</p>}
+      {error && (
+        <p className='text-xs mt-0.5' style={{ color: '#f87171' }}>
+          {error}
+        </p>
+      )}
     </div>
   )
 }
