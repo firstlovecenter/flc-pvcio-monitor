@@ -8,6 +8,39 @@
 
 import { supabase } from './supabase'
 
+// ── Edge Function client ──────────────────────────────────────────────────
+
+/**
+ * POST to a Supabase Edge Function with the FLC JWT attached.
+ * Throws if the response is not OK.
+ * @param {string} fnName — Edge Function name (e.g. 'log-activity')
+ * @param {object} body   — JSON-serialisable request body
+ * @returns {Promise<object>}
+ */
+async function callEdgeFunction(fnName, body) {
+  const token = localStorage.getItem('accessToken')
+  if (!token) throw new Error('Not authenticated — no accessToken found')
+
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${fnName}`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }))
+    throw new Error(
+      err.error || `Edge function "${fnName}" failed with status ${res.status}`,
+    )
+  }
+
+  return res.json()
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────
 
 /**
@@ -29,6 +62,34 @@ export function getISOWeekString(date) {
 // ── Read ──────────────────────────────────────────────────────────────────
 
 /**
+ * Returns a Map<activityId, Set<dateStr>> for all logs by the given user
+ * whose activity_date falls within [rangeStart, rangeEnd] (inclusive, 'yyyy-MM-dd').
+ * Used by TimelineScreen to mark which activities are done on which days.
+ * @param {string} userId
+ * @param {string} rangeStart — 'yyyy-MM-dd'
+ * @param {string} rangeEnd   — 'yyyy-MM-dd'
+ * @returns {Promise<Map<string, Set<string>>>}
+ */
+export async function getLogsForTimeline(userId, rangeStart, rangeEnd) {
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .select('activity_id, activity_date')
+    .eq('submitted_by_id', userId)
+    .eq('type', 'activity')
+    .gte('activity_date', rangeStart)
+    .lte('activity_date', rangeEnd)
+  if (error) throw error
+
+  const map = new Map()
+  for (const row of data) {
+    if (!row.activity_date) continue
+    if (!map.has(row.activity_id)) map.set(row.activity_id, new Set())
+    map.get(row.activity_id).add(row.activity_date)
+  }
+  return map
+}
+
+/**
  * Returns the last `limit` logs for the given user (home feed).
  * @param {string} userId
  * @param {number} limit
@@ -43,34 +104,6 @@ export async function getRecentLogs(userId, limit = 20) {
     .limit(limit)
   if (error) throw error
   return data
-}
-
-/**
- * Returns a Map<activityId, Set<dateStr>> for logs within a date range.
- * Used by TimelineScreen to mark timeline entries as done.
- *
- * @param {string} userId
- * @param {string} startDate — ISO date string 'yyyy-MM-dd'
- * @param {string} endDate   — ISO date string 'yyyy-MM-dd'
- * @returns {Promise<Map<string, Set<string>>>}
- */
-export async function getLogsForTimeline(userId, startDate, endDate) {
-  const { data, error } = await supabase
-    .from('activity_logs')
-    .select('activity_id, activity_date')
-    .eq('submitted_by_id', userId)
-    .eq('type', 'activity')
-    .gte('activity_date', startDate)
-    .lte('activity_date', endDate)
-  if (error) throw error
-
-  const map = new Map()
-  for (const row of data || []) {
-    if (!row.activity_date) continue
-    if (!map.has(row.activity_id)) map.set(row.activity_id, new Set())
-    map.get(row.activity_id).add(row.activity_date)
-  }
-  return map
 }
 
 /**
@@ -149,10 +182,7 @@ export async function addLog(user, entry, photoFile = null) {
     category: entry.category,
     level: entry.level,
     freq: entry.freq,
-
-    // The date the activity happened (leader-selected, up to 4 weeks back).
-    // Used to match logs back to timeline entries.
-    activity_date: entry.activityDate || new Date().toISOString().slice(0, 10),
+    activity_date: entry.activityDate,
 
     // Unit IDs (unit-centric — the source of truth for reporting)
     bacenta_id: bacentaId,
@@ -178,14 +208,7 @@ export async function addLog(user, entry, photoFile = null) {
     photo_url: photoUrl,
   }
 
-  const { data, error } = await supabase
-    .from('activity_logs')
-    .insert(row)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
+  return callEdgeFunction('log-activity', { row })
 }
 
 /**
@@ -235,8 +258,8 @@ export async function uploadPhoto(userId, file) {
  * @param {object} user — enriched user object from enrichUser()
  */
 export async function upsertProfile(user) {
-  const { error } = await supabase.from('profiles').upsert(
-    {
+  await callEdgeFunction('upsert-profile', {
+    profile: {
       id: user.userId,
       email: user.email,
       first_name: user.firstName,
@@ -253,9 +276,7 @@ export async function upsertProfile(user) {
       stream_name: user.stream?.name || null,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: 'id' },
-  )
-  if (error) throw error
+  })
 }
 
 // ── Weekly Summary ────────────────────────────────────────────────────────
@@ -320,11 +341,5 @@ export async function addWeeklySummary(
     fields: { logsThisWeek, missedActivities, note },
     photo_url: null,
   }
-  const { data, error } = await supabase
-    .from('activity_logs')
-    .insert(row)
-    .select()
-    .single()
-  if (error) throw error
-  return data
+  return callEdgeFunction('log-activity', { row })
 }

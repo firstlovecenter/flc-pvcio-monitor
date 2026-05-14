@@ -48,7 +48,7 @@ export const CYCLE_START = new Date('2026-05-11')
 export function getCycleWeekForMonday(monday) {
   const msPerWeek = 7 * 24 * 60 * 60 * 1000
   const weekOffset = Math.round((monday - CYCLE_START) / msPerWeek)
-  return ((weekOffset % 6) + 6) % 6 + 1 // always 1–6
+  return (((weekOffset % 6) + 6) % 6) + 1 // always 1–6
 }
 
 /** Returns the current cycle week (1–6). */

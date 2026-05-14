@@ -3,32 +3,27 @@
 // Wire real auth by replacing getCurrentUser() body
 
 import { getActivitiesForLevel } from '../data/activities'
+import { fetchMemberLeaderships } from './neo4j'
 
 const LEAD_CHURCHES_URL =
   import.meta.env.VITE_LEAD_CHURCHES_API_URL ||
   'https://rgldisl2bxl3l2upaauxodtrhy0uxkot.lambda-url.eu-west-2.on.aws/auth/churches'
 
 export function decodeJWT(token) {
-  try {
-    return JSON.parse(atob(token.split('.')[1]))
-  } catch {
-    return null
-  }
+  try { return JSON.parse(atob(token.split('.')[1])); } catch { return null; }
 }
 
 export function getLevelFromRoles(roles = []) {
-  const r = roles.map((x) => x.toLowerCase())
-  if (r.some((x) => x.includes('adminstream') || x.includes('leaderstream')))
-    return 'bishop'
-  if (r.some((x) => x.includes('oversight') || x.includes('council')))
-    return 'overseer'
-  if (r.some((x) => x.includes('governorship'))) return 'governorship'
-  if (r.some((x) => x.includes('bacenta'))) return 'bacenta'
-  return 'bacenta'
+  const r = roles.map(x => x.toLowerCase());
+  if (r.some(x => x.includes('adminstream') || x.includes('leaderstream'))) return 'bishop';
+  if (r.some(x => x.includes('oversight') || x.includes('council'))) return 'overseer';
+  if (r.some(x => x.includes('governorship'))) return 'governorship';
+  if (r.some(x => x.includes('bacenta'))) return 'bacenta';
+  return 'bacenta';
 }
 
 export function isAdmin(roles = []) {
-  return roles.some((r) => r.startsWith('admin'))
+  return roles.some(r => r.startsWith('admin'));
 }
 
 function hasActivities(level) {
@@ -57,33 +52,13 @@ function normalizeChurchContexts(member) {
   }
 
   const contexts = [
-    ...(member?.leadsStream || []).map((x) =>
-      toContext(x, 'bishop', 'Stream Lead'),
-    ),
-    ...(member?.isAdminForStream || []).map((x) =>
-      toContext(x, 'bishop', 'Stream Admin'),
-    ),
-    ...(member?.leadsCouncil || []).map((x) =>
-      toContext(x, 'overseer', 'Council Lead'),
-    ),
-    ...(member?.isAdminForCouncil || []).map((x) =>
-      toContext(x, 'overseer', 'Council Admin'),
-    ),
-    ...(member?.isArrivalsAdminForCouncil || []).map((x) =>
-      toContext(x, 'overseer', 'Council Arrivals Admin'),
-    ),
-    ...(member?.leadsGovernorship || []).map((x) =>
-      toContext(x, 'governorship', 'Governorship Lead'),
-    ),
-    ...(member?.isAdminForGovernorship || []).map((x) =>
-      toContext(x, 'governorship', 'Governorship Admin'),
-    ),
-    ...(member?.isArrivalsAdminForGovernorship || []).map((x) =>
-      toContext(x, 'governorship', 'Governorship Arrivals Admin'),
-    ),
-    ...(member?.leadsBacenta || []).map((x) =>
-      toContext(x, 'bacenta', 'Bacenta Lead'),
-    ),
+    ...(member?.leadsCouncil || []).map((x) => toContext(x, 'overseer', 'Council Lead')),
+    ...(member?.isAdminForCouncil || []).map((x) => toContext(x, 'overseer', 'Council Admin')),
+    ...(member?.isArrivalsAdminForCouncil || []).map((x) => toContext(x, 'overseer', 'Council Arrivals Admin')),
+    ...(member?.leadsGovernorship || []).map((x) => toContext(x, 'governorship', 'Governorship Lead')),
+    ...(member?.isAdminForGovernorship || []).map((x) => toContext(x, 'governorship', 'Governorship Admin')),
+    ...(member?.isArrivalsAdminForGovernorship || []).map((x) => toContext(x, 'governorship', 'Governorship Arrivals Admin')),
+    ...(member?.leadsBacenta || []).map((x) => toContext(x, 'bacenta', 'Bacenta Lead')),
   ].filter(Boolean)
 
   const fallbackBacentaId = member?.bacenta?.id
@@ -96,84 +71,21 @@ function normalizeChurchContexts(member) {
     })
   }
 
-  return uniqueChurchContexts(contexts).filter((ctx) =>
-    hasActivities(ctx.level),
-  )
+  return uniqueChurchContexts(contexts).filter((ctx) => hasActivities(ctx.level))
 }
 
 function localFallbackChurchContexts(payload) {
-  // churchScopes comes from the JWT (new API format)
-  const scopes = payload.churchScopes || {}
-
-  return uniqueChurchContexts(
-    [
-      payload?.stream?.id
-        ? {
-            id: payload.stream.id,
-            name: payload.stream.name || 'Stream',
-            level: 'bishop',
-            source: 'Local Stream',
-          }
-        : null,
-      payload?.council?.id
-        ? {
-            id: payload.council.id,
-            name: payload.council.name || 'Council',
-            level: 'overseer',
-            source: 'Local Council',
-          }
-        : null,
-      payload?.governorship?.id
-        ? {
-            id: payload.governorship.id,
-            name: payload.governorship.name || 'Governorship',
-            level: 'governorship',
-            source: 'Local Governorship',
-          }
-        : null,
-      payload?.bacenta?.id
-        ? {
-            id: payload.bacenta.id,
-            name: payload.bacenta.name || 'Bacenta',
-            level: 'bacenta',
-            source: 'Local Bacenta',
-          }
-        : null,
-      // Fallback: JWT churchScopes (new API shape)
-      scopes.leadsBacentaOf?.id
-        ? {
-            id: scopes.leadsBacentaOf.id,
-            name: scopes.leadsBacentaOf.name || 'Bacenta',
-            level: 'bacenta',
-            source: 'JWT churchScopes',
-          }
-        : null,
-      scopes.leadsGovernorshipOf?.id
-        ? {
-            id: scopes.leadsGovernorshipOf.id,
-            name: scopes.leadsGovernorshipOf.name || 'Governorship',
-            level: 'governorship',
-            source: 'JWT churchScopes',
-          }
-        : null,
-      scopes.leadsCouncilOf?.id
-        ? {
-            id: scopes.leadsCouncilOf.id,
-            name: scopes.leadsCouncilOf.name || 'Council',
-            level: 'overseer',
-            source: 'JWT churchScopes',
-          }
-        : null,
-      scopes.leadsStreamOf?.id
-        ? {
-            id: scopes.leadsStreamOf.id,
-            name: scopes.leadsStreamOf.name || 'Stream',
-            level: 'bishop',
-            source: 'JWT churchScopes',
-          }
-        : null,
-    ].filter(Boolean),
-  ).filter((ctx) => hasActivities(ctx.level))
+  return uniqueChurchContexts([
+    payload?.council?.id
+      ? { id: payload.council.id, name: payload.council.name || 'Council', level: 'overseer', source: 'Local Council' }
+      : null,
+    payload?.governorship?.id
+      ? { id: payload.governorship.id, name: payload.governorship.name || 'Governorship', level: 'governorship', source: 'Local Governorship' }
+      : null,
+    payload?.bacenta?.id
+      ? { id: payload.bacenta.id, name: payload.bacenta.name || 'Bacenta', level: 'bacenta', source: 'Local Bacenta' }
+      : null,
+  ].filter(Boolean)).filter((ctx) => hasActivities(ctx.level))
 }
 
 // ── MOCK — swap this whole block when real auth is ready ──────────────────
@@ -183,58 +95,39 @@ export const MOCK_USER = {
   firstName: 'David Dag',
   lastName: 'Vanderpuije',
   roles: ['leaderBacenta', 'leaderOversight', 'adminStream'],
-  bacenta: { id: '9e926ea4', name: 'God Chasers' },
-  governorship: { id: 'a9eda2d9', name: 'Haatso Mabey' },
-  council: { name: 'Colossians 1' },
-  stream: { id: '2dd77486', name: 'Colossians' },
-}
+  bacenta:     { id: '9e926ea4', name: 'God Chasers' },
+  governorship:{ id: 'a9eda2d9', name: 'Haatso Mabey' },
+  council:     { name: 'Colossians 1' },
+  stream:      { id: '2dd77486', name: 'Colossians' },
+};
 
 export function getCurrentUser() {
-  const token = localStorage.getItem('accessToken')
+  const token = localStorage.getItem('accessToken');
   if (token) {
-    const payload = decodeJWT(token)
-    if (payload) {
-      // Merge membership persisted at login so church context survives page reloads.
-      // The JWT itself only carries churchScopes; the flat bacenta/governorship/
-      // council/stream fields come from the login response's membership object.
-      const membershipRaw = localStorage.getItem('membership')
-      const membership = membershipRaw ? JSON.parse(membershipRaw) : null
-      return enrichUser({
-        ...payload,
-        bacenta:      membership?.bacenta      || null,
-        governorship: membership?.governorship || null,
-        council:      membership?.council      || null,
-        stream:       membership?.stream       || null,
-      })
-    }
+    const payload = decodeJWT(token);
+    if (payload) return enrichUser(payload);
   }
   // Demo mode (no real token)
-  const demo = localStorage.getItem('demoUser')
+  const demo = localStorage.getItem('demoUser');
   if (demo) {
-    try {
-      return JSON.parse(demo)
-    } catch {
-      /* ignore */
-    }
+    try { return JSON.parse(demo); } catch { /* ignore */ }
   }
   // Fall back to mock during development when nothing is stored
-  return enrichUser(MOCK_USER)
+  return enrichUser(MOCK_USER);
 }
 
 export function enrichUser(payload) {
-  const level = getLevelFromRoles(payload.roles || [])
-  const unitName =
-    payload.bacenta?.name ||
-    payload.governorship?.name ||
-    payload.council?.name ||
-    payload.stream?.name ||
-    ''
+  const level = getLevelFromRoles(payload.roles || []);
+  // membership fields (bacenta/governorship/council/stream) are no longer in
+  // the JWT — they come from Neo4j via resolveChurchContextsForUser().
+  // enrichUser() stays synchronous; churchContexts starts empty and is
+  // populated by the async resolution step after login.
   const churchContexts = localFallbackChurchContexts(payload)
   const activeChurch = churchContexts[0] || null
   return {
     ...payload,
     level: activeChurch?.level || level,
-    unitName: activeChurch?.name || unitName,
+    unitName: activeChurch?.name || '',
     isAdmin: isAdmin(payload.roles || []),
     churchContexts,
     activeChurch,
@@ -243,8 +136,7 @@ export function enrichUser(payload) {
 
 export async function fetchLeadChurchesByEmail(email, accessToken) {
   if (!email) throw new Error('Email is required to load church contexts')
-  if (!accessToken)
-    throw new Error('Access token is required to load church contexts')
+  if (!accessToken) throw new Error('Access token is required to load church contexts')
 
   const response = await fetch(LEAD_CHURCHES_URL, {
     method: 'POST',
@@ -264,27 +156,32 @@ export async function fetchLeadChurchesByEmail(email, accessToken) {
 }
 
 export async function resolveChurchContextsForUser(user) {
+  // ── Leadership contexts (leadsCouncil, leadsGovernorship, leadsBacenta)
+  //   These are in the JWT payload — read them directly, no network call.
+  const leadershipContexts = normalizeChurchContexts(user)
+
+  // ── Membership hierarchy (bacenta → governorship → council → stream)
+  //   This is being removed from the JWT; Neo4j is now the source of truth.
+  //   Fall back to any membership fields still present in the JWT payload
+  //   (covers the transition period and dev mode).
+  let member = null
+  let membershipContexts = []
   try {
-    const token = localStorage.getItem('accessToken')
-    const leadChurchesPayload = await fetchLeadChurchesByEmail(
-      user.email,
-      token,
-    )
-    const churchContexts = normalizeChurchContexts(leadChurchesPayload)
-    if (churchContexts.length) {
-      return {
-        member: leadChurchesPayload?.user || null,
-        churchContexts,
-        activeChurch: churchContexts[0],
-      }
+    member = await fetchMemberLeaderships(user.email)
+    if (member) {
+      membershipContexts = localFallbackChurchContexts(member)
     }
   } catch {
-    // fall back to local user payload if graphql is unavailable
+    membershipContexts = localFallbackChurchContexts(user)
   }
 
-  const churchContexts = localFallbackChurchContexts(user)
+  const churchContexts = uniqueChurchContexts([
+    ...leadershipContexts,
+    ...membershipContexts,
+  ]).filter((ctx) => hasActivities(ctx.level))
+
   return {
-    member: null,
+    member,
     churchContexts,
     activeChurch: churchContexts[0] || null,
   }
@@ -307,12 +204,12 @@ export async function loginWithCredentials(email, password) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || data.message || 'Login failed')
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || data.message || 'Login failed');
 
-  localStorage.setItem('accessToken', data.tokens.accessToken)
-  localStorage.setItem('refreshToken', data.tokens.refreshToken)
+  localStorage.setItem('accessToken',  data.tokens.accessToken);
+  localStorage.setItem('refreshToken', data.tokens.refreshToken);
 
   // NOTE: setSupabaseAuth() is only needed if RLS is enabled and Supabase's
   // JWT secret matches the FLC auth system's signing secret. Skip for now
@@ -320,42 +217,24 @@ export async function loginWithCredentials(email, password) {
   // const { setSupabaseAuth } = await import('./supabase');
   // await setSupabaseAuth(data.tokens.accessToken);
 
-  const payload = decodeJWT(data.tokens.accessToken)
-  const { id, ...userFields } = data.user
-
-  // Persist membership so getCurrentUser() can reconstruct church context
-  // on page reload (the JWT alone only carries churchScopes, not the flat
-  // bacenta/governorship/council/stream objects enrichUser expects).
-  if (data.membership) {
-    localStorage.setItem('membership', JSON.stringify(data.membership))
-  }
-
-  const user = enrichUser({
-    ...payload,
-    ...userFields,
-    userId:       payload.userId ?? id,
-    // Merge membership so localFallbackChurchContexts finds the right unit IDs
-    bacenta:      data.membership?.bacenta      || null,
-    governorship: data.membership?.governorship || null,
-    council:      data.membership?.council      || null,
-    stream:       data.membership?.stream       || null,
-  })
+  const payload = decodeJWT(data.tokens.accessToken);
+  const { id, ...userFields } = data.user;
+  const user = enrichUser({ ...payload, ...userFields, userId: payload.userId ?? id });
 
   // Sync the leader's profile to Supabase (upsert — safe to call every login)
   try {
-    const { upsertProfile } = await import('./logs')
-    await upsertProfile(user)
+    const { upsertProfile } = await import('./logs');
+    await upsertProfile(user);
   } catch (err) {
     // Non-fatal: profile sync failure should not block login
-    console.warn('[auth] upsertProfile failed:', err.message)
+    console.warn('[auth] upsertProfile failed:', err.message);
   }
 
-  return user
+  return user;
 }
 
 export function logout() {
-  localStorage.removeItem('accessToken')
-  localStorage.removeItem('refreshToken')
-  localStorage.removeItem('demoUser')
-  localStorage.removeItem('membership')
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('demoUser');
 }

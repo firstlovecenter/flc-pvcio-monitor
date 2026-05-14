@@ -97,7 +97,13 @@ export const ACTIVITIES = [
     appliesTo: ['bacenta'],
     interaction: 'form',
     fields: [
-      { id: 'count', type: 'attendance', label: 'How many members called?', required: true, flagBelow: 5 },
+      {
+        id: 'count',
+        type: 'attendance',
+        label: 'How many members called?',
+        required: true,
+        flagBelow: 5,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -133,8 +139,18 @@ export const ACTIVITIES = [
     appliesTo: ['bacenta'],
     interaction: 'form',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: true },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: true,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -148,13 +164,32 @@ export const ACTIVITIES = [
     appliesTo: ['bacenta'],
     interaction: 'form',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: true },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: true,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
     weekOverrides: {
-      3: { name: 'Bacenta Service (Inter-Bacenta)', desc: 'Inter-bacenta format this week' },
-      6: { name: 'Attend Council Joint Service', desc: 'Attend — do not lead', interaction: 'quick', visibility: 'join', fields: [] },
+      3: {
+        name: 'Bacenta Service (Inter-Bacenta)',
+        desc: 'Inter-bacenta format this week',
+      },
+      6: {
+        name: 'Attend Council Joint Service',
+        desc: 'Attend — do not lead',
+        interaction: 'quick',
+        visibility: 'join',
+        fields: [],
+      },
     },
   },
   {
@@ -168,7 +203,13 @@ export const ACTIVITIES = [
     interaction: 'quick',
     visibility: 'join',
     weekOverrides: {
-      2: { name: 'Benny Hinn Night — Day 2', desc: 'Ps Benny Weekend — special event', specialEvent: true, interaction: 'quick', fields: [] },
+      2: {
+        name: 'Benny Hinn Night — Day 2',
+        desc: 'Ps Benny Weekend — special event',
+        specialEvent: true,
+        interaction: 'quick',
+        fields: [],
+      },
     },
   },
   {
@@ -208,8 +249,18 @@ export const ACTIVITIES = [
     streamFilter: ['Ephesians', 'Philippians', 'Anagkazo'],
     interaction: 'form',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -225,8 +276,18 @@ export const ACTIVITIES = [
     streamFilter: ['Galatians', 'Colossians'],
     interaction: 'form',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -242,10 +303,26 @@ export const ACTIVITIES = [
     streamFilter: ['Ephesians', 'Philippians', 'Anagkazo'],
     interaction: 'form',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'duration', type: 'attendance', label: 'How many hours?', required: false, flagBelow: 7 },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'duration',
+        type: 'attendance',
+        label: 'How many hours?',
+        required: false,
+        flagBelow: 7,
+      },
       { id: 'note', type: 'note', label: 'Notes / summary', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
     ],
   },
   {
@@ -260,10 +337,26 @@ export const ACTIVITIES = [
     streamFilter: ['Galatians', 'Colossians'],
     interaction: 'form',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'duration', type: 'attendance', label: 'How many hours?', required: false, flagBelow: 7 },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'duration',
+        type: 'attendance',
+        label: 'How many hours?',
+        required: false,
+        flagBelow: 7,
+      },
       { id: 'note', type: 'note', label: 'Notes / summary', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
     ],
   },
   {
@@ -277,9 +370,25 @@ export const ACTIVITIES = [
     appliesTo: ['bacenta'],
     interaction: 'form',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'duration', type: 'attendance', label: 'How many hours?', required: false, flagBelow: 3 },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'duration',
+        type: 'attendance',
+        label: 'How many hours?',
+        required: false,
+        flagBelow: 3,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -297,10 +406,31 @@ export const ACTIVITIES = [
     appliesTo: ['bacenta'],
     interaction: 'form',
     fields: [
-      { id: 'outreachType', type: 'select', label: 'Outreach type', options: ['Door to Door', 'Bus Stop', 'Flyer Sharing'], required: false },
-      { id: 'attendance', type: 'attendance', label: 'How many participated?', required: false },
-      { id: 'salvations', type: 'attendance', label: 'Salvations / first-timers?', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'outreachType',
+        type: 'select',
+        label: 'Outreach type',
+        options: ['Door to Door', 'Bus Stop', 'Flyer Sharing'],
+        required: false,
+      },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many participated?',
+        required: false,
+      },
+      {
+        id: 'salvations',
+        type: 'attendance',
+        label: 'Salvations / first-timers?',
+        required: false,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -328,10 +458,36 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'join',
     fields: [
-      { id: 'outreachType', type: 'select', label: 'Outreach type', options: ['Breakfast Meeting', 'Dance Outreach', 'Games Night', 'Movie Night'], required: false },
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'salvations', type: 'attendance', label: 'Salvations / first-timers?', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'outreachType',
+        type: 'select',
+        label: 'Outreach type',
+        options: [
+          'Breakfast Meeting',
+          'Dance Outreach',
+          'Games Night',
+          'Movie Night',
+        ],
+        required: false,
+      },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'salvations',
+        type: 'attendance',
+        label: 'Salvations / first-timers?',
+        required: false,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -346,9 +502,24 @@ export const ACTIVITIES = [
     appliesTo: ['bacenta'],
     interaction: 'form',
     fields: [
-      { id: 'visitedCount', type: 'attendance', label: 'How many members visited?', required: false },
-      { id: 'visitedNames', type: 'names', label: 'Names visited (one per line)', required: false },
-      { id: 'concerns', type: 'note', label: 'Concerns or follow-ups?', required: false },
+      {
+        id: 'visitedCount',
+        type: 'attendance',
+        label: 'How many members visited?',
+        required: false,
+      },
+      {
+        id: 'visitedNames',
+        type: 'names',
+        label: 'Names visited (one per line)',
+        required: false,
+      },
+      {
+        id: 'concerns',
+        type: 'note',
+        label: 'Concerns or follow-ups?',
+        required: false,
+      },
     ],
   },
   {
@@ -362,10 +533,36 @@ export const ACTIVITIES = [
     appliesTo: ['bacenta'],
     interaction: 'form',
     fields: [
-      { id: 'outreachType', type: 'select', label: 'Outreach type', options: ['Breakfast Meeting', 'Dance Outreach', 'Games Night', 'Movie Night'], required: false },
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'salvations', type: 'attendance', label: 'Salvations / first-timers?', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'outreachType',
+        type: 'select',
+        label: 'Outreach type',
+        options: [
+          'Breakfast Meeting',
+          'Dance Outreach',
+          'Games Night',
+          'Movie Night',
+        ],
+        required: false,
+      },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'salvations',
+        type: 'attendance',
+        label: 'Salvations / first-timers?',
+        required: false,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -381,10 +578,36 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'join',
     fields: [
-      { id: 'outreachType', type: 'select', label: 'Outreach type', options: ['Breakfast Meeting', 'Dance Outreach', 'Games Night', 'Movie Night'], required: false },
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'salvations', type: 'attendance', label: 'Salvations / first-timers?', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'outreachType',
+        type: 'select',
+        label: 'Outreach type',
+        options: [
+          'Breakfast Meeting',
+          'Dance Outreach',
+          'Games Night',
+          'Movie Night',
+        ],
+        required: false,
+      },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'salvations',
+        type: 'attendance',
+        label: 'Salvations / first-timers?',
+        required: false,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -405,7 +628,13 @@ export const ACTIVITIES = [
     appliesTo: ['governorship'],
     interaction: 'form',
     fields: [
-      { id: 'count', type: 'attendance', label: 'How many members called?', required: true, flagBelow: 5 },
+      {
+        id: 'count',
+        type: 'attendance',
+        label: 'How many members called?',
+        required: true,
+        flagBelow: 5,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -420,7 +649,12 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'lead',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many leaders attended?', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many leaders attended?',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -435,9 +669,19 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'lead',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
     ],
   },
   {
@@ -451,7 +695,12 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'monitor',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended across bacentas?', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended across bacentas?',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -466,12 +715,25 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'monitor',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'Attendance?', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'Attendance?',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
     weekOverrides: {
-      3: { name: 'Bacenta Service (Inter-Bacenta)', desc: 'Inter-bacenta format this week' },
-      6: { name: 'Attend Council Joint Service', desc: 'Attend — Overseer leads', interaction: 'quick', visibility: 'join' },
+      3: {
+        name: 'Bacenta Service (Inter-Bacenta)',
+        desc: 'Inter-bacenta format this week',
+      },
+      6: {
+        name: 'Attend Council Joint Service',
+        desc: 'Attend — Overseer leads',
+        interaction: 'quick',
+        visibility: 'join',
+      },
     },
   },
   {
@@ -485,7 +747,12 @@ export const ACTIVITIES = [
     interaction: 'quick',
     visibility: 'join',
     weekOverrides: {
-      2: { name: 'Benny Hinn Night — Day 2', desc: 'Ps Benny Weekend — special event', specialEvent: true, interaction: 'quick' },
+      2: {
+        name: 'Benny Hinn Night — Day 2',
+        desc: 'Ps Benny Weekend — special event',
+        specialEvent: true,
+        interaction: 'quick',
+      },
     },
   },
   {
@@ -513,8 +780,18 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'lead',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes / summary', required: false },
     ],
   },
@@ -531,8 +808,18 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'join',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -549,8 +836,18 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'join',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -567,10 +864,26 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'join',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'duration', type: 'attendance', label: 'How many hours?', required: false, flagBelow: 7 },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'duration',
+        type: 'attendance',
+        label: 'How many hours?',
+        required: false,
+        flagBelow: 7,
+      },
       { id: 'note', type: 'note', label: 'Notes / summary', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
     ],
   },
   {
@@ -586,10 +899,26 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'join',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'duration', type: 'attendance', label: 'How many hours?', required: false, flagBelow: 7 },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'duration',
+        type: 'attendance',
+        label: 'How many hours?',
+        required: false,
+        flagBelow: 7,
+      },
       { id: 'note', type: 'note', label: 'Notes / summary', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
     ],
   },
   {
@@ -604,7 +933,12 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'join',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -623,7 +957,12 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'monitor',
     fields: [
-      { id: 'totalAttendance', type: 'attendance', label: 'Total across all bacentas?', required: false },
+      {
+        id: 'totalAttendance',
+        type: 'attendance',
+        label: 'Total across all bacentas?',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -651,10 +990,36 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'lead',
     fields: [
-      { id: 'outreachType', type: 'select', label: 'Outreach type', options: ['Breakfast Meeting', 'Dance Outreach', 'Games Night', 'Movie Night'], required: false },
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'salvations', type: 'attendance', label: 'Salvations / first-timers?', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'outreachType',
+        type: 'select',
+        label: 'Outreach type',
+        options: [
+          'Breakfast Meeting',
+          'Dance Outreach',
+          'Games Night',
+          'Movie Night',
+        ],
+        required: false,
+      },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'salvations',
+        type: 'attendance',
+        label: 'Salvations / first-timers?',
+        required: false,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -669,8 +1034,18 @@ export const ACTIVITIES = [
     appliesTo: ['governorship'],
     interaction: 'form',
     fields: [
-      { id: 'visitedNames', type: 'names', label: 'Who did you visit? (one per line)', required: false },
-      { id: 'concerns', type: 'note', label: 'Concerns or follow-ups?', required: false },
+      {
+        id: 'visitedNames',
+        type: 'names',
+        label: 'Who did you visit? (one per line)',
+        required: false,
+      },
+      {
+        id: 'concerns',
+        type: 'note',
+        label: 'Concerns or follow-ups?',
+        required: false,
+      },
     ],
   },
   {
@@ -684,8 +1059,18 @@ export const ACTIVITIES = [
     appliesTo: ['governorship'],
     interaction: 'form',
     fields: [
-      { id: 'visitedNames', type: 'names', label: 'Who did you visit? (one per line)', required: false },
-      { id: 'concerns', type: 'note', label: 'Concerns or follow-ups?', required: false },
+      {
+        id: 'visitedNames',
+        type: 'names',
+        label: 'Who did you visit? (one per line)',
+        required: false,
+      },
+      {
+        id: 'concerns',
+        type: 'note',
+        label: 'Concerns or follow-ups?',
+        required: false,
+      },
     ],
   },
   {
@@ -700,7 +1085,12 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'monitor',
     fields: [
-      { id: 'totalAttendance', type: 'attendance', label: 'Total attendance across bacentas?', required: false },
+      {
+        id: 'totalAttendance',
+        type: 'attendance',
+        label: 'Total attendance across bacentas?',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -716,7 +1106,12 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'join',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -738,7 +1133,13 @@ export const ACTIVITIES = [
     appliesTo: ['overseer'],
     interaction: 'form',
     fields: [
-      { id: 'count', type: 'attendance', label: 'How many members called?', required: true, flagBelow: 5 },
+      {
+        id: 'count',
+        type: 'attendance',
+        label: 'How many members called?',
+        required: true,
+        flagBelow: 5,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -753,7 +1154,12 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'ensure',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many leaders attended?', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many leaders attended?',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -768,8 +1174,18 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'ensure',
     fields: [
-      { id: 'meetingsHeld', type: 'attendance', label: 'How many governorship prayer meetings confirmed?', required: false },
-      { id: 'note', type: 'note', label: 'Any not held? Notes (optional)', required: false },
+      {
+        id: 'meetingsHeld',
+        type: 'attendance',
+        label: 'How many governorship prayer meetings confirmed?',
+        required: false,
+      },
+      {
+        id: 'note',
+        type: 'note',
+        label: 'Any not held? Notes (optional)',
+        required: false,
+      },
     ],
   },
   {
@@ -783,7 +1199,12 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'monitor',
     fields: [
-      { id: 'note', type: 'note', label: 'Any issues reported? Notes (optional)', required: false },
+      {
+        id: 'note',
+        type: 'note',
+        label: 'Any issues reported? Notes (optional)',
+        required: false,
+      },
     ],
   },
   {
@@ -797,16 +1218,34 @@ export const ACTIVITIES = [
     interaction: 'quick',
     visibility: 'monitor',
     weekOverrides: {
-      3: { name: 'Bacenta Service (Inter-Bacenta)', desc: 'Inter-bacenta format this week' },
+      3: {
+        name: 'Bacenta Service (Inter-Bacenta)',
+        desc: 'Inter-bacenta format this week',
+      },
       6: {
         name: 'Council Joint Service',
         desc: 'Attend / lead Council Joint Service',
         interaction: 'form',
         visibility: 'lead',
         fields: [
-          { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-          { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
-          { id: 'note', type: 'note', label: 'Notes / summary', required: false },
+          {
+            id: 'attendance',
+            type: 'attendance',
+            label: 'How many attended?',
+            required: false,
+          },
+          {
+            id: 'photo',
+            type: 'photo',
+            label: 'Photo (optional)',
+            required: false,
+          },
+          {
+            id: 'note',
+            type: 'note',
+            label: 'Notes / summary',
+            required: false,
+          },
         ],
       },
     },
@@ -822,11 +1261,22 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'lead',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
     weekOverrides: {
-      2: { name: 'Benny Hinn Night — Day 2', desc: 'Ps Benny Weekend — special event', specialEvent: true, interaction: 'quick', fields: [] },
+      2: {
+        name: 'Benny Hinn Night — Day 2',
+        desc: 'Ps Benny Weekend — special event',
+        specialEvent: true,
+        interaction: 'quick',
+        fields: [],
+      },
     },
   },
   {
@@ -839,7 +1289,12 @@ export const ACTIVITIES = [
     appliesTo: ['overseer'],
     interaction: 'form',
     fields: [
-      { id: 'count', type: 'attendance', label: 'How many counselled?', required: false },
+      {
+        id: 'count',
+        type: 'attendance',
+        label: 'How many counselled?',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
@@ -863,8 +1318,18 @@ export const ACTIVITIES = [
       6: ['Philippians'],
     },
     fields: [
-      { id: 'count', type: 'attendance', label: 'How many in the session?', required: false },
-      { id: 'note', type: 'note', label: 'Notes (confidential — keep brief)', required: false },
+      {
+        id: 'count',
+        type: 'attendance',
+        label: 'How many in the session?',
+        required: false,
+      },
+      {
+        id: 'note',
+        type: 'note',
+        label: 'Notes (confidential — keep brief)',
+        required: false,
+      },
     ],
   },
 
@@ -882,7 +1347,12 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'ensure',
     fields: [
-      { id: 'note', type: 'note', label: 'Notes / any issues?', required: false },
+      {
+        id: 'note',
+        type: 'note',
+        label: 'Notes / any issues?',
+        required: false,
+      },
     ],
   },
   {
@@ -898,8 +1368,18 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'lead',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes / summary', required: false },
     ],
   },
@@ -916,8 +1396,18 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'lead',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes / summary', required: false },
     ],
   },
@@ -934,10 +1424,26 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'lead',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'duration', type: 'attendance', label: 'How many hours?', required: false, flagBelow: 7 },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'duration',
+        type: 'attendance',
+        label: 'How many hours?',
+        required: false,
+        flagBelow: 7,
+      },
       { id: 'note', type: 'note', label: 'Notes / summary', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
     ],
   },
   {
@@ -953,10 +1459,26 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'lead',
     fields: [
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'duration', type: 'attendance', label: 'How many hours?', required: false, flagBelow: 7 },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'duration',
+        type: 'attendance',
+        label: 'How many hours?',
+        required: false,
+        flagBelow: 7,
+      },
       { id: 'note', type: 'note', label: 'Notes / summary', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
     ],
   },
   {
@@ -971,7 +1493,12 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'ensure',
     fields: [
-      { id: 'note', type: 'note', label: 'Notes / any issues?', required: false },
+      {
+        id: 'note',
+        type: 'note',
+        label: 'Notes / any issues?',
+        required: false,
+      },
     ],
   },
 
@@ -1013,7 +1540,12 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'monitor',
     fields: [
-      { id: 'note', type: 'note', label: 'Notes / observations (optional)', required: false },
+      {
+        id: 'note',
+        type: 'note',
+        label: 'Notes / observations (optional)',
+        required: false,
+      },
     ],
   },
   {
@@ -1028,9 +1560,24 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'lead',
     fields: [
-      { id: 'leadersVisited', type: 'names', label: 'Leaders visited (one per line)', required: false },
-      { id: 'couplesCount', type: 'attendance', label: 'Married couples visited', required: false },
-      { id: 'concerns', type: 'note', label: 'Concerns or follow-ups?', required: false },
+      {
+        id: 'leadersVisited',
+        type: 'names',
+        label: 'Leaders visited (one per line)',
+        required: false,
+      },
+      {
+        id: 'couplesCount',
+        type: 'attendance',
+        label: 'Married couples visited',
+        required: false,
+      },
+      {
+        id: 'concerns',
+        type: 'note',
+        label: 'Concerns or follow-ups?',
+        required: false,
+      },
     ],
   },
   {
@@ -1045,9 +1592,24 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'lead',
     fields: [
-      { id: 'leadersVisited', type: 'names', label: 'Leaders visited (one per line)', required: false },
-      { id: 'couplesCount', type: 'attendance', label: 'Married couples visited', required: false },
-      { id: 'concerns', type: 'note', label: 'Concerns or follow-ups?', required: false },
+      {
+        id: 'leadersVisited',
+        type: 'names',
+        label: 'Leaders visited (one per line)',
+        required: false,
+      },
+      {
+        id: 'couplesCount',
+        type: 'attendance',
+        label: 'Married couples visited',
+        required: false,
+      },
+      {
+        id: 'concerns',
+        type: 'note',
+        label: 'Concerns or follow-ups?',
+        required: false,
+      },
     ],
   },
   {
@@ -1062,7 +1624,12 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'monitor',
     fields: [
-      { id: 'note', type: 'note', label: 'Notes / observations (optional)', required: false },
+      {
+        id: 'note',
+        type: 'note',
+        label: 'Notes / observations (optional)',
+        required: false,
+      },
     ],
   },
   {
@@ -1077,15 +1644,40 @@ export const ACTIVITIES = [
     interaction: 'form',
     visibility: 'lead',
     fields: [
-      { id: 'outreachType', type: 'select', label: 'Outreach type', options: ['Breakfast Meeting', 'Dance Outreach', 'Games Night', 'Movie Night'], required: false },
-      { id: 'attendance', type: 'attendance', label: 'How many attended?', required: false },
-      { id: 'salvations', type: 'attendance', label: 'Salvations / first-timers?', required: false },
-      { id: 'photo', type: 'photo', label: 'Photo (optional)', required: false },
+      {
+        id: 'outreachType',
+        type: 'select',
+        label: 'Outreach type',
+        options: [
+          'Breakfast Meeting',
+          'Dance Outreach',
+          'Games Night',
+          'Movie Night',
+        ],
+        required: false,
+      },
+      {
+        id: 'attendance',
+        type: 'attendance',
+        label: 'How many attended?',
+        required: false,
+      },
+      {
+        id: 'salvations',
+        type: 'attendance',
+        label: 'Salvations / first-timers?',
+        required: false,
+      },
+      {
+        id: 'photo',
+        type: 'photo',
+        label: 'Photo (optional)',
+        required: false,
+      },
       { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
     ],
   },
 ]
-
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
