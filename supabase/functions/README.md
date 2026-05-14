@@ -3,11 +3,11 @@
 Edge Functions act as security middleware. Every request is authenticated
 by verifying the FLC JWT (HS256) before any DB write or external query occurs.
 
-| Function | Path | Purpose |
-|---|---|---|
-| `log-activity` | `POST /functions/v1/log-activity` | Insert activity_logs row |
-| `upsert-profile` | `POST /functions/v1/upsert-profile` | Upsert profiles row |
-| `neo4j-query` | `POST /functions/v1/neo4j-query` | Proxy Cypher queries to Neo4j |
+| Function         | Path                                | Purpose                       |
+| ---------------- | ----------------------------------- | ----------------------------- |
+| `log-activity`   | `POST /functions/v1/log-activity`   | Insert activity_logs row      |
+| `upsert-profile` | `POST /functions/v1/upsert-profile` | Upsert profiles row           |
+| `neo4j-query`    | `POST /functions/v1/neo4j-query`    | Proxy Cypher queries to Neo4j |
 
 ---
 
@@ -142,12 +142,13 @@ VITE_SUPABASE_URL=http://localhost:54321
 ```
 
 Response (success):
+
 ```json
 {
   "data": [
     {
       "columns": ["m"],
-      "data": [{ "row": [ { "id": "...", "firstName": "..." } ], "meta": [ {} ] }]
+      "data": [{ "row": [{ "id": "...", "firstName": "..." }], "meta": [{}] }]
     }
   ]
 }

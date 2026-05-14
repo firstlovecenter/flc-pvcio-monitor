@@ -10,7 +10,8 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
+  if (req.method === 'OPTIONS')
+    return new Response(null, { headers: corsHeaders })
 
   const results: Record<string, string> = {}
 
@@ -25,7 +26,10 @@ Deno.serve(async (req: Request) => {
 
   // ── Test 2: TLS ────────────────────────────────────────────────────
   try {
-    const conn = await Deno.connectTls({ hostname: NEO4J_HOST, port: NEO4J_PORT })
+    const conn = await Deno.connectTls({
+      hostname: NEO4J_HOST,
+      port: NEO4J_PORT,
+    })
     conn.close()
     results.tls = `✅ TLS connected to ${NEO4J_HOST}:${NEO4J_PORT}`
   } catch (e) {

@@ -30,14 +30,14 @@
 import * as jose from 'https://deno.land/x/jose@v4.14.4/index.ts'
 import neo4j from 'https://deno.land/x/neo4j_driver_lite@5.15.0/mod.ts'
 
-const FLC_JWT_SECRET  = Deno.env.get('FLC_JWT_SECRET')!
-const NEO4J_URI       = Deno.env.get('NEO4J_URI')!
-const NEO4J_USER      = Deno.env.get('NEO4J_USER')!
-const NEO4J_PASSWORD  = Deno.env.get('NEO4J_PASSWORD')!
-const NEO4J_DATABASE  = Deno.env.get('NEO4J_DATABASE') ?? 'neo4j'
+const FLC_JWT_SECRET = Deno.env.get('FLC_JWT_SECRET')!
+const NEO4J_URI = Deno.env.get('NEO4J_URI')!
+const NEO4J_USER = Deno.env.get('NEO4J_USER')!
+const NEO4J_PASSWORD = Deno.env.get('NEO4J_PASSWORD')!
+const NEO4J_DATABASE = Deno.env.get('NEO4J_DATABASE') ?? 'neo4j'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
@@ -112,7 +112,10 @@ Deno.serve(async (req: Request) => {
       database: NEO4J_DATABASE,
     })
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Neo4j connection timed out after 10s')), 10_000)
+      setTimeout(
+        () => reject(new Error('Neo4j connection timed out after 10s')),
+        10_000,
+      ),
     )
 
     const { records } = await Promise.race([queryPromise, timeoutPromise])
@@ -122,7 +125,6 @@ Deno.serve(async (req: Request) => {
     const data = records.map((r) => r.toObject())
 
     return jsonResponse({ data })
-
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error'
     console.error('neo4j-query unhandled error:', message)
