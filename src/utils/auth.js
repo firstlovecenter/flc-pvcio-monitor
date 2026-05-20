@@ -5,6 +5,17 @@
 import { getActivitiesForLevel } from '../data/activities'
 import { fetchMemberLeaderships } from './neo4j'
 
+// Maps JWT churchScopes "leads*Of" keys → internal activity levels.
+// Only "leads" keys are included — admin/teller/arrivals roles are not
+// leadership roles and should not appear in the context switcher.
+const LEADS_SCOPE_TO_LEVEL = {
+  leadsBacentaOf:      'bacenta',
+  leadsGovernorshipOf: 'governorship',
+  leadsCouncilOf:      'overseer',
+  leadsOversightOf:    'oversight', // no activities built for this level → filtered out
+  leadsStreamOf:       'bishop',
+}
+
 const LEAD_CHURCHES_URL =
   import.meta.env.VITE_LEAD_CHURCHES_API_URL ||
   'https://rgldisl2bxl3l2upaauxodtrhy0uxkot.lambda-url.eu-west-2.on.aws/auth/churches'
@@ -15,6 +26,40 @@ export function decodeJWT(token) {
   } catch {
     return null
   }
+}
+
+/** Returns true if the token is missing or its `exp` claim is in the past. */
+export function isTokenExpired(token) {
+  if (!token) return true
+  const payload = decodeJWT(token)
+  if (!payload?.exp) return true
+  // exp is in seconds; subtract a 30s buffer so we refresh before hard expiry
+  return Date.now() / 1000 > payload.exp - 30
+}
+
+/**
+ * Exchange the stored refreshToken for a new accessToken.
+ * Stores the new token(s) in localStorage and returns the new accessToken.
+ * Throws if the refresh fails — callers should treat that as a logout signal.
+ */
+export async function refreshAccessToken() {
+  const refreshToken = localStorage.getItem('refreshToken')
+  if (!refreshToken) throw new Error('No refresh token available')
+
+  const res = await fetch(`${import.meta.env.VITE_AUTH_API_URL}/auth/refresh-token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.error || 'Token refresh failed')
+
+  const newAccess = data.accessToken
+  if (!newAccess) throw new Error('Refresh response missing accessToken')
+
+  localStorage.setItem('accessToken', newAccess)
+
+  return newAccess
 }
 
 export function getLevelFromRoles(roles = []) {
@@ -46,54 +91,18 @@ function uniqueChurchContexts(contexts) {
   })
 }
 
-function normalizeChurchContexts(member) {
-  const toContext = (item, level, source) => {
-    if (!item?.id) return null
-    return {
-      id: item.id,
-      name: item.name || `${source} ${item.id.slice(0, 6)}`,
-      level,
-      source,
-    }
-  }
-
-  const contexts = [
-    ...(member?.leadsCouncil || []).map((x) =>
-      toContext(x, 'overseer', 'Council Lead'),
-    ),
-    ...(member?.isAdminForCouncil || []).map((x) =>
-      toContext(x, 'overseer', 'Council Admin'),
-    ),
-    ...(member?.isArrivalsAdminForCouncil || []).map((x) =>
-      toContext(x, 'overseer', 'Council Arrivals Admin'),
-    ),
-    ...(member?.leadsGovernorship || []).map((x) =>
-      toContext(x, 'governorship', 'Governorship Lead'),
-    ),
-    ...(member?.isAdminForGovernorship || []).map((x) =>
-      toContext(x, 'governorship', 'Governorship Admin'),
-    ),
-    ...(member?.isArrivalsAdminForGovernorship || []).map((x) =>
-      toContext(x, 'governorship', 'Governorship Arrivals Admin'),
-    ),
-    ...(member?.leadsBacenta || []).map((x) =>
-      toContext(x, 'bacenta', 'Bacenta Lead'),
-    ),
-  ].filter(Boolean)
-
-  const fallbackBacentaId = member?.bacenta?.id
-  if (fallbackBacentaId) {
-    contexts.push({
-      id: fallbackBacentaId,
-      name: member?.leadsBacenta?.[0]?.name || 'Assigned Bacenta',
-      level: 'bacenta',
-      source: 'Member Bacenta',
+// Build church contexts from the JWT churchScopes object.
+// Only processes "leads*Of" keys — the user must actively lead the church
+// for it to appear in the context switcher.
+function churchContextsFromScopes(scopes = {}) {
+  return Object.entries(LEADS_SCOPE_TO_LEVEL)
+    .map(([key, level]) => {
+      const item = scopes[key]
+      if (!item?.id) return null
+      return { id: item.id, name: item.name || level, level, source: key }
     })
-  }
-
-  return uniqueChurchContexts(contexts).filter((ctx) =>
-    hasActivities(ctx.level),
-  )
+    .filter(Boolean)
+    .filter((ctx) => hasActivities(ctx.level))
 }
 
 function localFallbackChurchContexts(payload) {
@@ -134,9 +143,13 @@ export const MOCK_USER = {
   firstName: 'David Dag',
   lastName: 'Vanderpuije',
   roles: ['leaderBacenta', 'leaderOversight', 'adminStream'],
-  bacenta: { id: '9e926ea4', name: 'God Chasers' },
-  governorship: { id: 'a9eda2d9', name: 'Haatso Mabey' },
-  council: { name: 'Colossians 1' },
+  churchScopes: {
+    leadsBacentaOf:     { id: '9e926ea4-6cbf-4cc3-b625-4b93e289d662', name: 'God Chasers' },
+    leadsOversightOf:   { id: '6289b4e3-1712-431c-b301-adfdfd94bdbd', name: 'Africa West Family' },
+    isAdminForStreamOf: { id: '47f2eb18-351f-4027-a9a7-864573375ffb', name: 'Yaounde Sunday Service' },
+  },
+  // Legacy membership fields — kept for stream-name resolution in timeline filtering.
+  // These come from Neo4j in production; hardcoded here for dev mode only.
   stream: { id: '2dd77486', name: 'Colossians' },
 }
 
@@ -161,11 +174,13 @@ export function getCurrentUser() {
 
 export function enrichUser(payload) {
   const level = getLevelFromRoles(payload.roles || [])
-  // membership fields (bacenta/governorship/council/stream) are no longer in
-  // the JWT — they come from Neo4j via resolveChurchContextsForUser().
-  // enrichUser() stays synchronous; churchContexts starts empty and is
-  // populated by the async resolution step after login.
-  const churchContexts = localFallbackChurchContexts(payload)
+  // Build church contexts from JWT churchScopes (leads*Of keys only).
+  // Fall back to localFallbackChurchContexts for old-format tokens that
+  // don't yet have the churchScopes field.
+  const scopeContexts = churchContextsFromScopes(payload.churchScopes || {})
+  const churchContexts = scopeContexts.length
+    ? scopeContexts
+    : localFallbackChurchContexts(payload)
   const activeChurch = churchContexts[0] || null
   return {
     ...payload,
@@ -200,34 +215,24 @@ export async function fetchLeadChurchesByEmail(email, accessToken) {
 }
 
 export async function resolveChurchContextsForUser(user) {
-  // ── Leadership contexts (leadsCouncil, leadsGovernorship, leadsBacenta)
-  //   These are in the JWT payload — read them directly, no network call.
-  const leadershipContexts = normalizeChurchContexts(user)
-
-  // ── Membership hierarchy (bacenta → governorship → council → stream)
-  //   This is being removed from the JWT; Neo4j is now the source of truth.
-  //   Fall back to any membership fields still present in the JWT payload
-  //   (covers the transition period and dev mode).
+  // Church contexts come directly from churchScopes in the JWT — already built
+  // by enrichUser(). No network call is needed for the context switcher.
+  //
+  // We still call fetchMemberLeaderships to get the membership hierarchy
+  // (bacenta → governorship → council → stream) so that timeline stream
+  // filtering (user.stream?.name) keeps working.
   let member = null
-  let membershipContexts = []
   try {
     member = await fetchMemberLeaderships(user.email)
-    if (member) {
-      membershipContexts = localFallbackChurchContexts(member)
-    }
   } catch {
-    membershipContexts = localFallbackChurchContexts(user)
+    // Non-fatal — timeline stream filtering degrades gracefully without it.
   }
 
-  const churchContexts = uniqueChurchContexts([
-    ...leadershipContexts,
-    ...membershipContexts,
-  ]).filter((ctx) => hasActivities(ctx.level))
-
+  const churchContexts = user.churchContexts || []
   return {
     member,
     churchContexts,
-    activeChurch: churchContexts[0] || null,
+    activeChurch: user.activeChurch || churchContexts[0] || null,
   }
 }
 

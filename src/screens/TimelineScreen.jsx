@@ -27,7 +27,7 @@ import DaySection from '../components/DaySection'
 
 const TODAY = format(new Date(), 'yyyy-MM-dd')
 const WEEKS_AHEAD = 12
-const WEEKS_BACK = 2
+const WEEKS_BACK = 0
 
 // ── Level badge ──────────────────────────────────────────────────────────
 const LEVEL_BADGE = {
@@ -167,11 +167,11 @@ export default function TimelineScreen() {
         rangeStart,
         rangeEnd,
       )
-      const timeline = buildTimeline(user, [], loggedMap, WEEKS_AHEAD)
+      const timeline = buildTimeline(user, [], loggedMap, WEEKS_AHEAD, WEEKS_BACK)
       setEntries(timeline)
     } catch (err) {
       console.error('Failed to load timeline:', err)
-      const timeline = buildTimeline(user, [], new Map(), WEEKS_AHEAD)
+      const timeline = buildTimeline(user, [], new Map(), WEEKS_AHEAD, WEEKS_BACK)
       setEntries(timeline)
     } finally {
       setLoading(false)

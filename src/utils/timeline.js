@@ -268,8 +268,9 @@ export function buildTimeline(
   scheduledEntries = [],
   loggedMap = new Map(),
   weeksAhead = 12,
+  weeksBack = 0,
 ) {
-  const recurring = generateRecurring(user, weeksAhead)
+  const recurring = generateRecurring(user, weeksAhead, weeksBack)
   const scheduled = scheduledEntries.filter((e) => e.level === user.level)
   const all = [...recurring, ...scheduled]
   all.sort((a, b) => a.date.localeCompare(b.date))
