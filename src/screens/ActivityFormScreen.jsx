@@ -134,7 +134,7 @@ export default function ActivityFormScreen() {
 
   function validate() {
     const next = {}
-    for (const f of (activity.fields || [])) {
+    for (const f of activity.fields || []) {
       if (!f.required) continue
       const val = values[f.id]
       if (

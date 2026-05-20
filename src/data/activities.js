@@ -218,7 +218,12 @@ export const ACTIVITIES = [
         specialEvent: true,
         interaction: 'form',
         fields: [
-          { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
+          {
+            id: 'note',
+            type: 'note',
+            label: 'Notes (optional)',
+            required: false,
+          },
         ],
       },
     },
@@ -782,7 +787,12 @@ export const ACTIVITIES = [
         specialEvent: true,
         interaction: 'form',
         fields: [
-          { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
+          {
+            id: 'note',
+            type: 'note',
+            label: 'Notes (optional)',
+            required: false,
+          },
         ],
       },
     },

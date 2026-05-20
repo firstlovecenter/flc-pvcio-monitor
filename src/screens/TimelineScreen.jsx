@@ -167,11 +167,23 @@ export default function TimelineScreen() {
         rangeStart,
         rangeEnd,
       )
-      const timeline = buildTimeline(user, [], loggedMap, WEEKS_AHEAD, WEEKS_BACK)
+      const timeline = buildTimeline(
+        user,
+        [],
+        loggedMap,
+        WEEKS_AHEAD,
+        WEEKS_BACK,
+      )
       setEntries(timeline)
     } catch (err) {
       console.error('Failed to load timeline:', err)
-      const timeline = buildTimeline(user, [], new Map(), WEEKS_AHEAD, WEEKS_BACK)
+      const timeline = buildTimeline(
+        user,
+        [],
+        new Map(),
+        WEEKS_AHEAD,
+        WEEKS_BACK,
+      )
       setEntries(timeline)
     } finally {
       setLoading(false)
