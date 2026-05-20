@@ -9,11 +9,11 @@ import { fetchMemberLeaderships } from './neo4j'
 // Only "leads" keys are included — admin/teller/arrivals roles are not
 // leadership roles and should not appear in the context switcher.
 const LEADS_SCOPE_TO_LEVEL = {
-  leadsBacentaOf:      'bacenta',
+  leadsBacentaOf: 'bacenta',
   leadsGovernorshipOf: 'governorship',
-  leadsCouncilOf:      'overseer',
-  leadsOversightOf:    'oversight', // no activities built for this level → filtered out
-  leadsStreamOf:       'bishop',
+  leadsCouncilOf: 'overseer',
+  leadsOversightOf: 'oversight', // no activities built for this level → filtered out
+  leadsStreamOf: 'bishop',
 }
 
 const LEAD_CHURCHES_URL =
@@ -46,11 +46,14 @@ export async function refreshAccessToken() {
   const refreshToken = localStorage.getItem('refreshToken')
   if (!refreshToken) throw new Error('No refresh token available')
 
-  const res = await fetch(`${import.meta.env.VITE_AUTH_API_URL}/auth/refresh-token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-  })
+  const res = await fetch(
+    `${import.meta.env.VITE_AUTH_API_URL}/auth/refresh-token`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    },
+  )
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.error || 'Token refresh failed')
 
@@ -144,9 +147,18 @@ export const MOCK_USER = {
   lastName: 'Vanderpuije',
   roles: ['leaderBacenta', 'leaderOversight', 'adminStream'],
   churchScopes: {
-    leadsBacentaOf:     { id: '9e926ea4-6cbf-4cc3-b625-4b93e289d662', name: 'God Chasers' },
-    leadsOversightOf:   { id: '6289b4e3-1712-431c-b301-adfdfd94bdbd', name: 'Africa West Family' },
-    isAdminForStreamOf: { id: '47f2eb18-351f-4027-a9a7-864573375ffb', name: 'Yaounde Sunday Service' },
+    leadsBacentaOf: {
+      id: '9e926ea4-6cbf-4cc3-b625-4b93e289d662',
+      name: 'God Chasers',
+    },
+    leadsOversightOf: {
+      id: '6289b4e3-1712-431c-b301-adfdfd94bdbd',
+      name: 'Africa West Family',
+    },
+    isAdminForStreamOf: {
+      id: '47f2eb18-351f-4027-a9a7-864573375ffb',
+      name: 'Yaounde Sunday Service',
+    },
   },
   // Legacy membership fields — kept for stream-name resolution in timeline filtering.
   // These come from Neo4j in production; hardcoded here for dev mode only.

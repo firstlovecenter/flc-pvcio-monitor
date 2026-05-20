@@ -115,8 +115,11 @@ export const ACTIVITIES = [
     name: 'Join SAT',
     desc: 'Servants Armed & Trained — teaching session led by Governor',
     appliesTo: ['bacenta'],
-    interaction: 'quick',
+    interaction: 'form',
     visibility: 'join',
+    fields: [
+      { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
+    ],
   },
   {
     id: 'b-wed-prayer',
@@ -126,8 +129,11 @@ export const ACTIVITIES = [
     name: 'Join Governor Morning Prayer Meeting',
     desc: 'Attend the Governorship morning prayer meeting',
     appliesTo: ['bacenta'],
-    interaction: 'quick',
+    interaction: 'form',
     visibility: 'join',
+    fields: [
+      { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
+    ],
   },
   {
     id: 'b-thu-morningprayer',
@@ -200,15 +206,25 @@ export const ACTIVITIES = [
     name: 'Join Overseer Prayer Meeting',
     desc: 'Attend — Overseer leads this',
     appliesTo: ['bacenta'],
-    interaction: 'quick',
+    interaction: 'form',
     visibility: 'join',
+    fields: [
+      { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
+    ],
     weekOverrides: {
       2: {
         name: 'Benny Hinn Night — Day 2',
         desc: 'Ps Benny Weekend — special event',
         specialEvent: true,
-        interaction: 'quick',
-        fields: [],
+        interaction: 'form',
+        fields: [
+          {
+            id: 'note',
+            type: 'note',
+            label: 'Notes (optional)',
+            required: false,
+          },
+        ],
       },
     },
   },
@@ -220,7 +236,16 @@ export const ACTIVITIES = [
     name: 'Send Members for Counselling',
     desc: 'Encourage and direct members to counselling after church',
     appliesTo: ['bacenta'],
-    interaction: 'quick',
+    interaction: 'form',
+    fields: [
+      {
+        id: 'membersSent',
+        type: 'attendance',
+        label: 'How many members sent?',
+        required: false,
+      },
+      { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
+    ],
   },
 
   // ── BACENTA · Cycle — Friday ──────────────────────────────────────────────
@@ -234,8 +259,11 @@ export const ACTIVITIES = [
     name: 'Governor-Led All Night',
     desc: 'All night prayer — led by Governor',
     appliesTo: ['bacenta'],
-    interaction: 'quick',
+    interaction: 'form',
     visibility: 'join',
+    fields: [
+      { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
+    ],
   },
   {
     id: 'b-fri-w2',
@@ -444,7 +472,10 @@ export const ACTIVITIES = [
     desc: 'Ps Benny Weekend — special event',
     appliesTo: ['bacenta'],
     specialEvent: true,
-    interaction: 'quick',
+    interaction: 'form',
+    fields: [
+      { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
+    ],
   },
   {
     id: 'b-sat-w3',
@@ -744,14 +775,25 @@ export const ACTIVITIES = [
     name: 'Join Overseer Prayer Meeting with Leaders',
     desc: 'Attend — Overseer leads this',
     appliesTo: ['governorship'],
-    interaction: 'quick',
+    interaction: 'form',
     visibility: 'join',
+    fields: [
+      { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
+    ],
     weekOverrides: {
       2: {
         name: 'Benny Hinn Night — Day 2',
         desc: 'Ps Benny Weekend — special event',
         specialEvent: true,
-        interaction: 'quick',
+        interaction: 'form',
+        fields: [
+          {
+            id: 'note',
+            type: 'note',
+            label: 'Notes (optional)',
+            required: false,
+          },
+        ],
       },
     },
   },
@@ -763,7 +805,16 @@ export const ACTIVITIES = [
     name: 'Send Members for Counselling',
     desc: 'Direct members to counselling after church',
     appliesTo: ['governorship'],
-    interaction: 'quick',
+    interaction: 'form',
+    fields: [
+      {
+        id: 'membersSent',
+        type: 'attendance',
+        label: 'How many members sent?',
+        required: false,
+      },
+      { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
+    ],
   },
 
   // ── GOVERNOR · Cycle — Friday ──────────────────────────────────────────────
@@ -976,7 +1027,10 @@ export const ACTIVITIES = [
     desc: 'Ps Benny Weekend — special event',
     appliesTo: ['governorship'],
     specialEvent: true,
-    interaction: 'quick',
+    interaction: 'form',
+    fields: [
+      { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
+    ],
   },
   {
     id: 'g-sat-w3',
@@ -1513,8 +1567,23 @@ export const ACTIVITIES = [
     name: 'Bacentas Outreach',
     desc: 'Monitor — Bacentas running door to door / bus stop / flyer sharing',
     appliesTo: ['overseer'],
-    interaction: 'quick',
+    interaction: 'form',
     visibility: 'monitor',
+    fields: [
+      {
+        id: 'bacentasCount',
+        type: 'attendance',
+        label: 'How many bacentas ran outreach?',
+        required: false,
+      },
+      {
+        id: 'salvations',
+        type: 'attendance',
+        label: 'Total salvations across bacentas?',
+        required: false,
+      },
+      { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
+    ],
   },
   {
     id: 'o-sat-w2',
@@ -1526,7 +1595,10 @@ export const ACTIVITIES = [
     desc: 'Ps Benny Weekend — special event',
     appliesTo: ['overseer'],
     specialEvent: true,
-    interaction: 'quick',
+    interaction: 'form',
+    fields: [
+      { id: 'note', type: 'note', label: 'Notes (optional)', required: false },
+    ],
   },
   {
     id: 'o-sat-w3',

@@ -134,7 +134,7 @@ export default function ActivityFormScreen() {
 
   function validate() {
     const next = {}
-    for (const f of activity.fields) {
+    for (const f of activity.fields || []) {
       if (!f.required) continue
       const val = values[f.id]
       if (
@@ -303,7 +303,7 @@ export default function ActivityFormScreen() {
 
           {/* Fields */}
           <form onSubmit={handleSubmit} className='flex flex-col gap-5'>
-            {activity.fields.map((field) => (
+            {(activity.fields || []).map((field) => (
               <FieldRenderer
                 key={field.id}
                 field={field}
