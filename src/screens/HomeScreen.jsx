@@ -34,8 +34,9 @@ export default function HomeScreen() {
     let mounted = true
 
     async function hydrateUser() {
-      const stored = sessionStorage.getItem('currentUser')
-      const baseUser = stored ? JSON.parse(stored) : getCurrentUser()
+      // Always re-derive the user from the JWT so churchContexts are fresh.
+      // sessionStorage is only consulted for the previously-selected church ID.
+      const baseUser = getCurrentUser()
       if (!baseUser) return
 
       setLoadingChurches(true)

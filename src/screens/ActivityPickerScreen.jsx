@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   getActivitiesByCategoryAndLevel,
@@ -6,6 +6,7 @@ import {
   groupByFreq,
 } from '../data/activities'
 import { getCurrentUser } from '../utils/auth'
+import { addLog } from '../utils/logs'
 
 const GROUP_LABELS = {
   weekly: 'Weekly Recurring',
@@ -20,6 +21,34 @@ export default function ActivityPickerScreen() {
   const user =
     JSON.parse(sessionStorage.getItem('currentUser') || 'null') ||
     getCurrentUser()
+
+  const [quickToast, setQuickToast] = useState(null)
+
+  async function handleQuickLog(activity) {
+    try {
+      await addLog(
+        user,
+        {
+          activityId: activity.id,
+          activityName: activity.name,
+          category: activity.category,
+          level: user.level,
+          freq: activity.freq,
+          fields: {},
+        },
+        null,
+      )
+      setQuickToast(`${activity.name} — marked as done!`)
+      setTimeout(() => {
+        setQuickToast(null)
+        navigate('/home')
+      }, 1200)
+    } catch (err) {
+      console.error('Quick log failed:', err)
+      setQuickToast('Something went wrong — try again')
+      setTimeout(() => setQuickToast(null), 2500)
+    }
+  }
 
   const category = getCategoryById(cat)
   const grouped = useMemo(() => {
@@ -128,7 +157,11 @@ export default function ActivityPickerScreen() {
                   <button
                     type='button'
                     key={activity.id}
-                    onClick={() => navigate(`/log/${activity.id}`)}
+                    onClick={() =>
+                      activity.interaction === 'quick'
+                        ? handleQuickLog(activity)
+                        : navigate(`/log/${activity.id}`)
+                    }
                     className='w-full rounded-2xl px-4 py-4 text-left cursor-pointer transition-all active:scale-[0.98] active:opacity-80'
                     style={{
                       background: 'var(--card)',
@@ -172,6 +205,16 @@ export default function ActivityPickerScreen() {
           )
         })}
       </main>
+
+      {/* Quick-tap toast */}
+      {quickToast && (
+        <div
+          className='fixed bottom-8 left-1/2 -translate-x-1/2 rounded-2xl px-6 py-3 text-sm font-semibold shadow-xl'
+          style={{ background: 'var(--green)', color: '#0C0F1A', zIndex: 50 }}
+        >
+          {quickToast}
+        </div>
+      )}
     </div>
   )
 }

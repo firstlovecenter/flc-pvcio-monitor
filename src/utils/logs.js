@@ -7,29 +7,47 @@
 // submitted_by_id is the audit trail only.
 
 import { supabase } from './supabase'
+import { isTokenExpired, refreshAccessToken } from './auth'
 
 // ── Edge Function client ──────────────────────────────────────────────────
 
 /**
  * POST to a Supabase Edge Function with the FLC JWT attached.
- * Throws if the response is not OK.
+ * Silently refreshes the access token if it is expired or if the server
+ * responds with 401/403, then retries once before throwing.
  * @param {string} fnName — Edge Function name (e.g. 'log-activity')
  * @param {object} body   — JSON-serialisable request body
  * @returns {Promise<object>}
  */
 async function callEdgeFunction(fnName, body) {
-  const token = localStorage.getItem('accessToken')
+  let token = localStorage.getItem('accessToken')
   if (!token) throw new Error('Not authenticated — no accessToken found')
 
+  // Proactively refresh if the token is already expired / nearly expired
+  if (isTokenExpired(token)) {
+    token = await refreshAccessToken()
+  }
+
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${fnName}`
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  })
+
+  async function attempt(t) {
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${t}`,
+      },
+      body: JSON.stringify(body),
+    })
+  }
+
+  let res = await attempt(token)
+
+  // On 401/403 try a token refresh and retry exactly once
+  if (res.status === 401 || res.status === 403) {
+    token = await refreshAccessToken()
+    res = await attempt(token)
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }))
