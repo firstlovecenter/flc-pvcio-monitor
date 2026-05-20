@@ -16,12 +16,12 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import * as jose from 'https://deno.land/x/jose@v4.14.4/index.ts'
 
-const SUPABASE_URL       = Deno.env.get('SUPABASE_URL')!
-const SERVICE_ROLE_KEY   = Deno.env.get('SERVICE_ROLE_KEY')!
-const FLC_JWT_SECRET     = Deno.env.get('FLC_JWT_SECRET')!
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY')!
+const FLC_JWT_SECRET = Deno.env.get('FLC_JWT_SECRET')!
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
@@ -95,7 +95,6 @@ Deno.serve(async (req: Request) => {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
-
   } catch (err) {
     console.error('[log-activity] Unexpected error:', err)
     return jsonError('Internal server error', 500)
