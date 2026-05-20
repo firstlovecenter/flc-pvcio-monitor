@@ -1,4 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from 'react-router-dom'
 import { useEffect } from 'react'
 import LoginScreen from './screens/LoginScreen'
 import TimelineScreen from './screens/TimelineScreen'
