@@ -58,7 +58,9 @@ export default function CouncilScreen() {
         leaders.forEach((l) => {
           if (l.governorshipId && !govMap.has(l.governorshipId)) {
             const governor = leaders.find(
-              (x) => x.level === 'governorship' && x.governorshipId === l.governorshipId,
+              (x) =>
+                x.level === 'governorship' &&
+                x.governorshipId === l.governorshipId,
             )
             govMap.set(l.governorshipId, {
               id: l.governorshipId,
@@ -112,7 +114,9 @@ export default function CouncilScreen() {
     >
       <AdminTopBar
         title={meta?.councilName ?? 'Council'}
-        backHref={meta?.streamId ? `/admin/stream/${meta.streamId}` : '/admin/dashboard'}
+        backHref={
+          meta?.streamId ? `/admin/stream/${meta.streamId}` : '/admin/dashboard'
+        }
       />
 
       <div className='px-4 pt-4 pb-8'>
@@ -132,7 +136,8 @@ export default function CouncilScreen() {
             }}
           >
             <p className='text-xs mb-2' style={{ color: 'var(--muted)' }}>
-              {summary.compliant}/{summary.total} leaders up to date across all governorships
+              {summary.compliant}/{summary.total} leaders up to date across all
+              governorships
             </p>
             <ComplianceBar pct={summary.pct} size='md' />
           </div>

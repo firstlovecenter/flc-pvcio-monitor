@@ -149,7 +149,11 @@ export default function GovernorshipScreen() {
     >
       <AdminTopBar
         title={meta ? `${meta.govName} Governorship` : 'Governorship'}
-        backHref={meta?.councilId ? `/admin/council/${meta.councilId}` : '/admin/dashboard'}
+        backHref={
+          meta?.councilId
+            ? `/admin/council/${meta.councilId}`
+            : '/admin/dashboard'
+        }
       />
 
       <div className='px-4 pt-4 pb-8'>
@@ -263,49 +267,83 @@ export default function GovernorshipScreen() {
         </div>
 
         {/* Defaulters */}
-        {!loading && (() => {
-          const defaulters = []
-          // Add governor if defaulting
-          if (data?.govRow) {
-            const gr = week === 'last' ? data.govRow.last : data.govRow.this
-            if (gr && !gr.compliant) defaulters.push({ name: data.governor?.fullName ?? 'Governor', role: 'Governor', userId: data.governor?.userId })
-          }
-          // Add bacenta leaders who are defaulting
-          data?.bacentas?.forEach(({ bac, last, this: curr }) => {
-            const row = week === 'last' ? last : curr
-            if (row && !row.compliant) defaulters.push({ name: bac.leaderName, role: bac.name, userId: bac.leaderUserId })
-          })
-          if (!defaulters.length) return null
-          return (
-            <>
-              <p
-                className='text-xs font-semibold uppercase tracking-widest mt-6 mb-2'
-                style={{ color: '#F87060' }}
-              >
-                Not yet filed ({defaulters.length})
-              </p>
-              <div
-                className='rounded-2xl overflow-hidden'
-                style={{ background: 'var(--card)', border: '1px solid rgba(248,112,96,.3)' }}
-              >
-                {defaulters.map((d, i) => (
-                  <button
-                    key={d.userId}
-                    onClick={() => navigate(`/admin/leader/${d.userId}`)}
-                    className='w-full text-left flex items-center justify-between px-4 py-3'
-                    style={{ borderBottom: i < defaulters.length - 1 ? '1px solid var(--border)' : 'none' }}
-                  >
-                    <div>
-                      <p className='text-sm font-medium' style={{ color: 'var(--text)' }}>{d.name}</p>
-                      <p className='text-xs' style={{ color: 'var(--muted)' }}>{d.role}</p>
-                    </div>
-                    <span className='text-xs font-semibold' style={{ color: '#F87060' }}>Behind →</span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )
-        })()}
+        {!loading &&
+          (() => {
+            const defaulters = []
+            // Add governor if defaulting
+            if (data?.govRow) {
+              const gr = week === 'last' ? data.govRow.last : data.govRow.this
+              if (gr && !gr.compliant)
+                defaulters.push({
+                  name: data.governor?.fullName ?? 'Governor',
+                  role: 'Governor',
+                  userId: data.governor?.userId,
+                })
+            }
+            // Add bacenta leaders who are defaulting
+            data?.bacentas?.forEach(({ bac, last, this: curr }) => {
+              const row = week === 'last' ? last : curr
+              if (row && !row.compliant)
+                defaulters.push({
+                  name: bac.leaderName,
+                  role: bac.name,
+                  userId: bac.leaderUserId,
+                })
+            })
+            if (!defaulters.length) return null
+            return (
+              <>
+                <p
+                  className='text-xs font-semibold uppercase tracking-widest mt-6 mb-2'
+                  style={{ color: '#F87060' }}
+                >
+                  Not yet filed ({defaulters.length})
+                </p>
+                <div
+                  className='rounded-2xl overflow-hidden'
+                  style={{
+                    background: 'var(--card)',
+                    border: '1px solid rgba(248,112,96,.3)',
+                  }}
+                >
+                  {defaulters.map((d, i) => (
+                    <button
+                      key={d.userId}
+                      onClick={() => navigate(`/admin/leader/${d.userId}`)}
+                      className='w-full text-left flex items-center justify-between px-4 py-3'
+                      style={{
+                        borderBottom:
+                          i < defaulters.length - 1
+                            ? '1px solid var(--border)'
+                            : 'none',
+                      }}
+                    >
+                      <div>
+                        <p
+                          className='text-sm font-medium'
+                          style={{ color: 'var(--text)' }}
+                        >
+                          {d.name}
+                        </p>
+                        <p
+                          className='text-xs'
+                          style={{ color: 'var(--muted)' }}
+                        >
+                          {d.role}
+                        </p>
+                      </div>
+                      <span
+                        className='text-xs font-semibold'
+                        style={{ color: '#F87060' }}
+                      >
+                        Behind →
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )
+          })()}
       </div>
     </div>
   )

@@ -132,7 +132,8 @@ export default function StreamOverviewScreen() {
             }}
           >
             <p className='text-xs mb-2' style={{ color: 'var(--muted)' }}>
-              {summary.compliant}/{summary.total} leaders up to date across all councils
+              {summary.compliant}/{summary.total} leaders up to date across all
+              councils
             </p>
             <ComplianceBar pct={summary.pct} size='md' />
           </div>
