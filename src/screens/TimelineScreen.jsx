@@ -12,7 +12,7 @@ import {
   withActiveChurch,
   logout,
 } from '../utils/auth'
-import { getLogsForTimeline, addLog } from '../utils/logs'
+import { getLogsForTimeline } from '../utils/logs'
 import {
   buildTimeline,
   groupByWeekAndDay,
@@ -27,7 +27,7 @@ import DaySection from '../components/DaySection'
 
 const TODAY = format(new Date(), 'yyyy-MM-dd')
 const WEEKS_AHEAD = 12
-const WEEKS_BACK = 0
+const WEEKS_BACK = 2
 
 // ── Level badge ──────────────────────────────────────────────────────────
 const LEVEL_BADGE = {
@@ -136,9 +136,7 @@ export default function TimelineScreen() {
       setLoadingCtx(false)
     }
     resolveContexts().catch(() => setLoadingCtx(false))
-    return () => {
-      mounted = false
-    }
+    return () => { mounted = false }
   }, [])
 
   // ── Context switch ────────────────────────────────────────────────
@@ -167,23 +165,11 @@ export default function TimelineScreen() {
         rangeStart,
         rangeEnd,
       )
-      const timeline = buildTimeline(
-        user,
-        [],
-        loggedMap,
-        WEEKS_AHEAD,
-        WEEKS_BACK,
-      )
+      const timeline = buildTimeline(user, [], loggedMap, WEEKS_AHEAD)
       setEntries(timeline)
     } catch (err) {
       console.error('Failed to load timeline:', err)
-      const timeline = buildTimeline(
-        user,
-        [],
-        new Map(),
-        WEEKS_AHEAD,
-        WEEKS_BACK,
-      )
+      const timeline = buildTimeline(user, [], new Map(), WEEKS_AHEAD)
       setEntries(timeline)
     } finally {
       setLoading(false)
@@ -204,48 +190,8 @@ export default function TimelineScreen() {
     }
   }, [loading])
 
-  const [quickToast, setQuickToast] = useState(null)
-  const [quickLogging, setQuickLogging] = useState(new Set())
-
   // ── Tap handler ──────────────────────────────────────────────────
-  async function handleQuickLog(entry) {
-    if (quickLogging.has(entry.id)) return
-    setQuickLogging((prev) => new Set(prev).add(entry.id))
-    try {
-      await addLog(
-        user,
-        {
-          activityId: entry.activityId,
-          activityName: entry.activityName,
-          category: entry.category,
-          level: user.level,
-          freq: entry.cycleWeek ? 'cycle' : 'weekly',
-          activityDate: entry.date,
-          fields: {},
-        },
-        null,
-      )
-      setQuickToast(`${entry.activityName} — done ✓`)
-      setTimeout(() => setQuickToast(null), 2000)
-      await loadTimeline()
-    } catch (err) {
-      console.error('Quick log failed:', err)
-      setQuickToast('Something went wrong — try again')
-      setTimeout(() => setQuickToast(null), 2500)
-    } finally {
-      setQuickLogging((prev) => {
-        const next = new Set(prev)
-        next.delete(entry.id)
-        return next
-      })
-    }
-  }
-
   function handleTap(entry) {
-    if (entry.interaction === 'quick') {
-      handleQuickLog(entry)
-      return
-    }
     navigate(`/log/${entry.activityId}?date=${entry.date}`)
   }
 
@@ -362,8 +308,7 @@ export default function TimelineScreen() {
             >
               {user.churchContexts.map((ctx) => (
                 <option key={`${ctx.level}:${ctx.id}`} value={ctx.id}>
-                  {ctx.name} ({ctx.level === 'overseer' ? 'Council' : ctx.level}
-                  )
+                  {ctx.name} ({ctx.level === 'overseer' ? 'Council' : ctx.level})
                 </option>
               ))}
             </select>
@@ -431,9 +376,7 @@ export default function TimelineScreen() {
 
                 {/* Day sections — all 7 days, empty ones show "no activities" */}
                 {days.map((dayDate) => {
-                  const dayEntries = (week.dayMap.get(dayDate) || []).filter(
-                    (e) => !e.done,
-                  )
+                  const dayEntries = (week.dayMap.get(dayDate) || []).filter(e => !e.done)
                   const isThisDay = dayDate === TODAY
                   return (
                     <div key={dayDate} ref={isThisDay ? todayRef : undefined}>
@@ -449,31 +392,6 @@ export default function TimelineScreen() {
               </div>
             )
           })}
-        </div>
-      )}
-
-      {/* Quick-tap toast */}
-      {quickToast && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 32,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            borderRadius: 16,
-            padding: '10px 22px',
-            fontSize: 13,
-            fontWeight: 600,
-            background: quickToast.includes('wrong')
-              ? 'var(--coral)'
-              : 'var(--green)',
-            color: '#0C0F1A',
-            zIndex: 50,
-            whiteSpace: 'nowrap',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
-          }}
-        >
-          {quickToast}
         </div>
       )}
     </div>
