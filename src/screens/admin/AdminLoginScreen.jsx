@@ -45,11 +45,17 @@ export default function AdminLoginScreen() {
         <div className='mb-8'>
           <h1 className='text-2xl font-bold tracking-tight m-0 leading-none'>
             <span className='text-white'>PVCIO </span>
-            <span style={{ color: 'var(--accent)' }} className='italic font-extrabold'>
+            <span
+              style={{ color: 'var(--accent)' }}
+              className='italic font-extrabold'
+            >
               Admin
             </span>
           </h1>
-          <p className='text-xs mt-1 tracking-widest uppercase' style={{ color: 'var(--muted)' }}>
+          <p
+            className='text-xs mt-1 tracking-widest uppercase'
+            style={{ color: 'var(--muted)' }}
+          >
             Compliance Dashboard
           </p>
         </div>
@@ -81,7 +87,10 @@ export default function AdminLoginScreen() {
           </div>
 
           {error && (
-            <p className='text-xs rounded-lg px-3 py-2' style={{ background: 'rgba(248,112,96,.12)', color: '#F87060' }}>
+            <p
+              className='text-xs rounded-lg px-3 py-2'
+              style={{ background: 'rgba(248,112,96,.12)', color: '#F87060' }}
+            >
               {error}
             </p>
           )}

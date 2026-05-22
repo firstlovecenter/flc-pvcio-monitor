@@ -25,9 +25,9 @@ export default function AdminDashboardScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const lastWeekStr    = getLastWeekString()
+  const lastWeekStr = getLastWeekString()
   const currentWeekStr = getCurrentWeekString()
-  const activeWeekStr  = week === 'last' ? lastWeekStr : currentWeekStr
+  const activeWeekStr = week === 'last' ? lastWeekStr : currentWeekStr
 
   useEffect(() => {
     let cancelled = false
@@ -44,30 +44,40 @@ export default function AdminDashboardScreen() {
               fetchLogsForWeek(currentWeekStr, stream.name),
             ])
 
-            const lastRows  = computeCompliance(leaders, lastWeekStr, lastLogs)
-            const thisRows  = computeCompliance(leaders, currentWeekStr, thisLogs)
+            const lastRows = computeCompliance(leaders, lastWeekStr, lastLogs)
+            const thisRows = computeCompliance(
+              leaders,
+              currentWeekStr,
+              thisLogs,
+            )
 
             return {
               stream,
               last: rollUp(lastRows),
               this: rollUp(thisRows),
             }
-          })
+          }),
         )
         if (!cancelled) setStreamData(results)
       } catch (err) {
-        if (!cancelled) setError(err.message || 'Failed to load compliance data')
+        if (!cancelled)
+          setError(err.message || 'Failed to load compliance data')
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
 
     load()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className='min-h-dvh' style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <div
+      className='min-h-dvh'
+      style={{ background: 'var(--bg)', color: 'var(--text)' }}
+    >
       <AdminTopBar title='PVCIO Admin' showBack={false} />
 
       <div className='px-4 pt-4 pb-8'>
@@ -82,8 +92,13 @@ export default function AdminDashboardScreen() {
           <p className='text-xs mt-2' style={{ color: 'var(--muted)' }}>
             {weekLabel(activeWeekStr)}
             {week === 'this' && (
-              <span className='ml-2 px-1.5 py-0.5 rounded text-xs'
-                style={{ background: 'rgba(79,127,255,.15)', color: 'var(--accent)' }}>
+              <span
+                className='ml-2 px-1.5 py-0.5 rounded text-xs'
+                style={{
+                  background: 'rgba(79,127,255,.15)',
+                  color: 'var(--accent)',
+                }}
+              >
                 In progress
               </span>
             )}
@@ -91,8 +106,10 @@ export default function AdminDashboardScreen() {
         </div>
 
         {error && (
-          <p className='text-xs rounded-lg px-3 py-2 mb-4'
-            style={{ background: 'rgba(248,112,96,.12)', color: '#F87060' }}>
+          <p
+            className='text-xs rounded-lg px-3 py-2 mb-4'
+            style={{ background: 'rgba(248,112,96,.12)', color: '#F87060' }}
+          >
             {error}
           </p>
         )}
@@ -101,8 +118,11 @@ export default function AdminDashboardScreen() {
         <div className='grid grid-cols-2 gap-3'>
           {loading
             ? Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className='rounded-2xl p-4 animate-pulse'
-                  style={{ background: 'var(--card)', height: 110 }} />
+                <div
+                  key={i}
+                  className='rounded-2xl p-4 animate-pulse'
+                  style={{ background: 'var(--card)', height: 110 }}
+                />
               ))
             : streamData.map(({ stream, last, this: curr }) => {
                 const data = week === 'last' ? last : curr
@@ -115,23 +135,35 @@ export default function AdminDashboardScreen() {
                       background: 'var(--card)',
                       border: '1px solid var(--border)',
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.borderColor = 'var(--accent)')
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.borderColor = 'var(--border)')
+                    }
                   >
-                    <p className='text-sm font-semibold mb-1' style={{ color: 'var(--text)' }}>
+                    <p
+                      className='text-sm font-semibold mb-1'
+                      style={{ color: 'var(--text)' }}
+                    >
                       {stream.name}
                     </p>
-                    <p className='text-xs mb-3' style={{ color: 'var(--muted)' }}>
+                    <p
+                      className='text-xs mb-3'
+                      style={{ color: 'var(--muted)' }}
+                    >
                       {data.filled}/{data.total}
                     </p>
                     <ComplianceBar pct={data.pct} showLabel={false} size='sm' />
-                    <p className='text-xs mt-1 font-semibold' style={{ color: 'var(--muted)' }}>
+                    <p
+                      className='text-xs mt-1 font-semibold'
+                      style={{ color: 'var(--muted)' }}
+                    >
                       {data.pct}%
                     </p>
                   </button>
                 )
-              })
-          }
+              })}
         </div>
       </div>
     </div>

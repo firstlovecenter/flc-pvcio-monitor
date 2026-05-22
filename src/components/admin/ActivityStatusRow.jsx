@@ -29,9 +29,15 @@ export default function ActivityStatusRow({ status, activity, log }) {
   function formatTime(iso) {
     if (!iso) return ''
     const d = new Date(iso)
-    return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) +
+    return (
+      d.toLocaleDateString('en-GB', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+      }) +
       ' · ' +
       d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+    )
   }
 
   return (
@@ -56,8 +62,8 @@ export default function ActivityStatusRow({ status, activity, log }) {
           {status === 'filed' && log?.submitted_at
             ? `Logged ${formatTime(log.submitted_at)}`
             : status === 'missing'
-            ? `Expected ${activity.day ?? ''} · Not filed`
-            : 'Not expected this cycle week'}
+              ? `Expected ${activity.day ?? ''} · Not filed`
+              : 'Not expected this cycle week'}
         </p>
       </div>
     </div>

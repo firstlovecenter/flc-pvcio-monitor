@@ -33,8 +33,14 @@ export default function WeekToggle({ value, onChange }) {
               <span className='ml-1 text-xs opacity-70'>·</span>
             )}
             {key === 'this' && (
-              <span className='text-xs' style={{ color: active ? 'rgba(255,255,255,0.7)' : 'var(--muted)' }}>
-                {' '}live
+              <span
+                className='text-xs'
+                style={{
+                  color: active ? 'rgba(255,255,255,0.7)' : 'var(--muted)',
+                }}
+              >
+                {' '}
+                live
               </span>
             )}
           </button>

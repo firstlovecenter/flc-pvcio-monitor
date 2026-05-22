@@ -52,10 +52,19 @@ export default function App() {
           <Route path='/admin' element={<AdminLoginScreen />} />
           <Route element={<AdminGuard />}>
             <Route path='/admin/dashboard' element={<AdminDashboardScreen />} />
-            <Route path='/admin/stream/:streamId' element={<StreamOverviewScreen />} />
-            <Route path='/admin/council/:councilId' element={<CouncilScreen />} />
+            <Route
+              path='/admin/stream/:streamId'
+              element={<StreamOverviewScreen />}
+            />
+            <Route
+              path='/admin/council/:councilId'
+              element={<CouncilScreen />}
+            />
             <Route path='/admin/gov/:govId' element={<GovernorshipScreen />} />
-            <Route path='/admin/leader/:userId' element={<LeaderDetailScreen />} />
+            <Route
+              path='/admin/leader/:userId'
+              element={<LeaderDetailScreen />}
+            />
           </Route>
 
           {/* Legacy redirects */}

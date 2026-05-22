@@ -10,14 +10,20 @@ import { complianceStatus } from '../../utils/compliance'
  * @param {boolean} showLabel — show text label next to bar (default true)
  * @param {'sm'|'md'} size   — bar height (default 'md')
  */
-export default function ComplianceBar({ pct, filled, total, showLabel = true, size = 'md' }) {
+export default function ComplianceBar({
+  pct,
+  filled,
+  total,
+  showLabel = true,
+  size = 'md',
+}) {
   const { label, color } = complianceStatus(pct)
   const h = size === 'sm' ? 4 : 6
 
   return (
     <div className='flex flex-col gap-1 w-full'>
       {/* Numbers row */}
-      {(filled !== undefined && total !== undefined) && (
+      {filled !== undefined && total !== undefined && (
         <div className='flex items-center justify-between'>
           <span className='text-xs' style={{ color: 'var(--muted)' }}>
             {filled}/{total} filled
