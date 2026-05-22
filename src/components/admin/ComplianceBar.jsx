@@ -4,9 +4,10 @@
 import { complianceStatus } from '../../utils/compliance'
 
 /**
- * @param {number} pct       — 0–100
- * @param {number} filled    — count of filled activities (optional)
- * @param {number} total     — total expected activities (optional)
+ * @param {number} pct        — 0–100
+ * @param {number} filled     — count numerator (optional)
+ * @param {number} total      — count denominator (optional)
+ * @param {string} countLabel — label after the count, e.g. 'leaders up to date' (default)
  * @param {boolean} showLabel — show text label next to bar (default true)
  * @param {'sm'|'md'} size   — bar height (default 'md')
  */
@@ -14,6 +15,7 @@ export default function ComplianceBar({
   pct,
   filled,
   total,
+  countLabel = 'leaders up to date',
   showLabel = true,
   size = 'md',
 }) {
@@ -26,7 +28,7 @@ export default function ComplianceBar({
       {filled !== undefined && total !== undefined && (
         <div className='flex items-center justify-between'>
           <span className='text-xs' style={{ color: 'var(--muted)' }}>
-            {filled}/{total} filled
+            {filled}/{total} {countLabel}
           </span>
           <span className='text-xs font-semibold' style={{ color }}>
             {pct}%

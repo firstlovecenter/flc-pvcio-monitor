@@ -11,13 +11,13 @@ import WeekToggle from '../../components/admin/WeekToggle'
 import {
   fetchLeadersForStream,
   computeCompliance,
-  rollUp,
+  rollUpLeaders,
   fetchLogsForWeek,
   getLastWeekString,
   getCurrentWeekString,
 } from '../../utils/compliance'
 import { weekLabel } from '../../utils/timeline'
-import { MOCK_STREAMS, MOCK_COUNCILS } from '../../data/leaders'
+import { MOCK_STREAMS } from '../../data/leaders'
 
 export default function StreamOverviewScreen() {
   const { streamId } = useParams()
@@ -28,7 +28,6 @@ export default function StreamOverviewScreen() {
   const [error, setError] = useState('')
 
   const stream = MOCK_STREAMS.find((s) => s.id === streamId)
-  const councils = MOCK_COUNCILS.filter((c) => c.streamId === streamId)
 
   const lastWeekStr = getLastWeekString()
   const currentWeekStr = getCurrentWeekString()
@@ -51,21 +50,37 @@ export default function StreamOverviewScreen() {
         const lastRows = computeCompliance(leaders, lastWeekStr, lastLogs)
         const thisRows = computeCompliance(leaders, currentWeekStr, thisLogs)
 
-        // Roll up per council
-        const councilStats = councils.map((council) => {
+        // Derive unique councils from Neo4j data
+        const councilMap = new Map()
+        leaders.forEach((l) => {
+          if (l.councilId && !councilMap.has(l.councilId)) {
+            const overseer = leaders.find(
+              (x) => x.level === 'overseer' && x.councilId === l.councilId,
+            )
+            councilMap.set(l.councilId, {
+              id: l.councilId,
+              name: l.councilName,
+              overseerName: overseer?.fullName ?? '',
+            })
+          }
+        })
+        const derivedCouncils = Array.from(councilMap.values())
+
+        // Roll up per council (leader headcount)
+        const councilStats = derivedCouncils.map((council) => {
           const cLast = lastRows.filter((r) => r.councilId === council.id)
           const cThis = thisRows.filter((r) => r.councilId === council.id)
           return {
             council,
-            last: rollUp(cLast),
-            this: rollUp(cThis),
+            last: rollUpLeaders(cLast),
+            this: rollUpLeaders(cThis),
           }
         })
 
         if (!cancelled)
           setData({
-            lastSummary: rollUp(lastRows),
-            thisSummary: rollUp(thisRows),
+            lastSummary: rollUpLeaders(lastRows),
+            thisSummary: rollUpLeaders(thisRows),
             councils: councilStats,
           })
       } catch (err) {
@@ -117,7 +132,8 @@ export default function StreamOverviewScreen() {
             }}
           >
             <p className='text-xs mb-2' style={{ color: 'var(--muted)' }}>
-              {summary.filled}/{summary.total} filled across all councils
+              {summary.compliant}/{summary.total} leaders up to date across all
+              councils
             </p>
             <ComplianceBar pct={summary.pct} size='md' />
           </div>
@@ -181,7 +197,7 @@ export default function StreamOverviewScreen() {
                       title={council.name}
                       subtitle={council.overseerName}
                       pct={d.pct}
-                      filled={d.filled}
+                      filled={d.compliant}
                       total={d.total}
                       href={`/admin/council/${council.id}`}
                       inProgress={week === 'this'}

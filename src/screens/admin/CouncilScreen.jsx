@@ -11,17 +11,12 @@ import WeekToggle from '../../components/admin/WeekToggle'
 import {
   fetchLeadersForCouncil,
   computeCompliance,
-  rollUp,
+  rollUpLeaders,
   fetchLogsForWeek,
   getLastWeekString,
   getCurrentWeekString,
 } from '../../utils/compliance'
 import { weekLabel } from '../../utils/timeline'
-import {
-  MOCK_COUNCILS,
-  MOCK_STREAMS,
-  MOCK_GOVERNORSHIPS,
-} from '../../data/leaders'
 
 export default function CouncilScreen() {
   const { councilId } = useParams()
@@ -29,18 +24,12 @@ export default function CouncilScreen() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-
-  const council = MOCK_COUNCILS.find((c) => c.id === councilId)
-  const stream = council
-    ? MOCK_STREAMS.find((s) => s.id === council.streamId)
-    : null
-  const govs = MOCK_GOVERNORSHIPS.filter((g) => g.councilId === councilId)
+  const [meta, setMeta] = useState(null) // { councilName, streamId, streamName }
 
   const lastWeekStr = getLastWeekString()
   const currentWeekStr = getCurrentWeekString()
 
   useEffect(() => {
-    if (!council || !stream) return
     let cancelled = false
 
     async function load() {
@@ -48,6 +37,13 @@ export default function CouncilScreen() {
       setError('')
       try {
         const leaders = await fetchLeadersForCouncil(councilId)
+        if (!cancelled && leaders.length) {
+          setMeta({
+            councilName: leaders[0].councilName,
+            streamId: leaders[0].streamId,
+            streamName: leaders[0].streamName,
+          })
+        }
         const leaderIds = leaders.map((l) => l.userId)
         const [lastLogs, thisLogs] = await Promise.all([
           fetchLogsForWeek(lastWeekStr, leaderIds),
@@ -57,26 +53,38 @@ export default function CouncilScreen() {
         const lastRows = computeCompliance(leaders, lastWeekStr, lastLogs)
         const thisRows = computeCompliance(leaders, currentWeekStr, thisLogs)
 
-        const govStats = govs.map((gov) => {
-          const gLast = lastRows.filter(
-            (r) =>
-              r.governorshipId === gov.id || r.userId === gov.governorUserId,
-          )
-          const gThis = thisRows.filter(
-            (r) =>
-              r.governorshipId === gov.id || r.userId === gov.governorUserId,
-          )
+        // Derive unique governorships from Neo4j data
+        const govMap = new Map()
+        leaders.forEach((l) => {
+          if (l.governorshipId && !govMap.has(l.governorshipId)) {
+            const governor = leaders.find(
+              (x) =>
+                x.level === 'governorship' &&
+                x.governorshipId === l.governorshipId,
+            )
+            govMap.set(l.governorshipId, {
+              id: l.governorshipId,
+              name: l.governorshipName,
+              governorName: governor?.fullName ?? '',
+            })
+          }
+        })
+        const derivedGovs = Array.from(govMap.values())
+
+        const govStats = derivedGovs.map((gov) => {
+          const gLast = lastRows.filter((r) => r.governorshipId === gov.id)
+          const gThis = thisRows.filter((r) => r.governorshipId === gov.id)
           return {
             gov,
-            last: rollUp(gLast),
-            this: rollUp(gThis),
+            last: rollUpLeaders(gLast),
+            this: rollUpLeaders(gThis),
           }
         })
 
         if (!cancelled)
           setData({
-            lastSummary: rollUp(lastRows),
-            thisSummary: rollUp(thisRows),
+            lastSummary: rollUpLeaders(lastRows),
+            thisSummary: rollUpLeaders(thisRows),
             govs: govStats,
           })
       } catch (err) {
@@ -105,8 +113,10 @@ export default function CouncilScreen() {
       style={{ background: 'var(--bg)', color: 'var(--text)' }}
     >
       <AdminTopBar
-        title={council?.name ?? 'Council'}
-        backHref={stream ? `/admin/stream/${stream.id}` : '/admin/dashboard'}
+        title={meta?.councilName ?? 'Council'}
+        backHref={
+          meta?.streamId ? `/admin/stream/${meta.streamId}` : '/admin/dashboard'
+        }
       />
 
       <div className='px-4 pt-4 pb-8'>
@@ -126,7 +136,8 @@ export default function CouncilScreen() {
             }}
           >
             <p className='text-xs mb-2' style={{ color: 'var(--muted)' }}>
-              {summary.filled}/{summary.total} filled across all governorships
+              {summary.compliant}/{summary.total} leaders up to date across all
+              governorships
             </p>
             <ComplianceBar pct={summary.pct} size='md' />
           </div>
@@ -190,7 +201,7 @@ export default function CouncilScreen() {
                       title={gov.name}
                       subtitle={gov.governorName}
                       pct={d.pct}
-                      filled={d.filled}
+                      filled={d.compliant}
                       total={d.total}
                       href={`/admin/gov/${gov.id}`}
                       inProgress={week === 'this'}
