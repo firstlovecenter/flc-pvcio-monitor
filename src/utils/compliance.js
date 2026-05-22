@@ -10,8 +10,8 @@
 import { startOfISOWeek, subWeeks, getISOWeek, getISOWeekYear } from 'date-fns'
 import { ACTIVITIES } from '../data/activities'
 import { supabase } from './supabase'
+import { runNeo4jQuery } from './neo4j'
 import {
-  getMockLeadersForStream,
   getMockLeadersForCouncil,
   getMockLeadersForGovernorship,
   getMockLeaderById,
@@ -35,12 +35,53 @@ export function getLastWeekString() {
   return getISOWeekString(subWeeks(new Date(), 1))
 }
 
-// ── Neo4j stubs (replace with real queries when ready) ───────────────────────
-// Each function returns a Promise<leader[]> — same shape as real Neo4j results.
-// UI code only calls these exports, so swapping the implementation is seamless.
+// ── Neo4j fetch functions ────────────────────────────────────────────────────
+// Each function returns a Promise<leader[]> — same shape for all callers.
+// Council / gov / leader still use mock data — swap when queries are confirmed.
+
+const LEADER_FIELDS = `
+  u.id                                        AS userId,
+  u.firstName + ' ' + coalesce(u.lastName,'') AS fullName
+`
 
 export async function fetchLeadersForStream(streamId) {
-  return getMockLeadersForStream(streamId)
+  const query = `
+    // ── Overseers ──────────────────────────────────────────────────────────
+    MATCH (s:Stream {id: $streamId})-[:HAS]->(c:Council)
+    MATCH (u:User:Member)-[:LEADS]->(c)
+    RETURN ${LEADER_FIELDS},
+           'overseer'  AS level,
+           s.id        AS streamId,    s.name AS streamName,
+           c.id        AS councilId,   c.name AS councilName,
+           null        AS governorshipId, null AS governorshipName,
+           null        AS bacentaId,   null   AS bacentaName
+
+    UNION ALL
+
+    // ── Governors ──────────────────────────────────────────────────────────
+    MATCH (s:Stream {id: $streamId})-[:HAS]->(c:Council)-[:HAS]->(g:Governorship)
+    MATCH (u:User:Member)-[:LEADS]->(g)
+    RETURN ${LEADER_FIELDS},
+           'governorship' AS level,
+           s.id           AS streamId,        s.name AS streamName,
+           c.id           AS councilId,        c.name AS councilName,
+           g.id           AS governorshipId,   g.name AS governorshipName,
+           null           AS bacentaId,        null   AS bacentaName
+
+    UNION ALL
+
+    // ── Bacenta leaders ────────────────────────────────────────────────────
+    MATCH (s:Stream {id: $streamId})-[:HAS]->(c:Council)
+          -[:HAS]->(g:Governorship)-[:HAS]->(b:Bacenta)
+    MATCH (u:User:Member)-[:LEADS]->(b)
+    RETURN ${LEADER_FIELDS},
+           'bacenta' AS level,
+           s.id      AS streamId,        s.name                        AS streamName,
+           c.id      AS councilId,       c.name                        AS councilName,
+           g.id      AS governorshipId,  g.name                        AS governorshipName,
+           b.id      AS bacentaId,       coalesce(b.name, b.stream_name) AS bacentaName
+  `
+  return runNeo4jQuery(query, { streamId })
 }
 
 export async function fetchLeadersForCouncil(councilId) {
@@ -118,12 +159,18 @@ export async function fetchLogsForWeek(weekStr, streamName) {
  * @returns {object[]} compliance rows — one per leader
  */
 export function computeCompliance(leaders, weekStr, logs) {
-  const logSet = new Set(logs.map((l) => `${l.submitted_by_id}::${l.activity_id}`))
+  const logSet = new Set(
+    logs.map((l) => `${l.submitted_by_id}::${l.activity_id}`),
+  )
 
   return leaders.map((leader) => {
     const expected = getExpectedActivityIds(leader.level, weekStr)
-    const filled = expected.filter((actId) => logSet.has(`${leader.userId}::${actId}`))
-    const missing = expected.filter((actId) => !logSet.has(`${leader.userId}::${actId}`))
+    const filled = expected.filter((actId) =>
+      logSet.has(`${leader.userId}::${actId}`),
+    )
+    const missing = expected.filter(
+      (actId) => !logSet.has(`${leader.userId}::${actId}`),
+    )
 
     return {
       ...leader,
@@ -132,7 +179,9 @@ export function computeCompliance(leaders, weekStr, logs) {
       missing: missing.length,
       filledIds: filled,
       missingIds: missing,
-      pct: expected.length ? Math.round((filled.length / expected.length) * 100) : 100,
+      pct: expected.length
+        ? Math.round((filled.length / expected.length) * 100)
+        : 100,
       compliant: missing.length === 0,
     }
   })
@@ -154,11 +203,11 @@ export function rollUp(rows) {
 // ── Status label + colour ─────────────────────────────────────────────────────
 
 export function complianceStatus(pct) {
-  if (pct === 100) return { label: 'Compliant',     color: '#34D399' }
-  if (pct >= 75)   return { label: 'Mostly done',   color: '#FBBF24' }
-  if (pct >= 50)   return { label: 'Partially done',color: '#F97316' }
-  if (pct >= 1)    return { label: 'Behind',         color: '#F87060' }
-  return               { label: 'Nothing filed',  color: '#DC2626' }
+  if (pct === 100) return { label: 'Compliant', color: '#34D399' }
+  if (pct >= 75) return { label: 'Mostly done', color: '#FBBF24' }
+  if (pct >= 50) return { label: 'Partially done', color: '#F97316' }
+  if (pct >= 1) return { label: 'Behind', color: '#F87060' }
+  return { label: 'Nothing filed', color: '#DC2626' }
 }
 
 // ── Convenience: fetch + compute for a scope in both weeks ───────────────────
@@ -175,11 +224,11 @@ export function complianceStatus(pct) {
  */
 export async function loadCompliance(scope, scopeId, streamName) {
   let leaders
-  if (scope === 'stream')         leaders = await fetchLeadersForStream(scopeId)
-  else if (scope === 'council')   leaders = await fetchLeadersForCouncil(scopeId)
-  else                             leaders = await fetchLeadersForGovernorship(scopeId)
+  if (scope === 'stream') leaders = await fetchLeadersForStream(scopeId)
+  else if (scope === 'council') leaders = await fetchLeadersForCouncil(scopeId)
+  else leaders = await fetchLeadersForGovernorship(scopeId)
 
-  const lastWeekStr    = getLastWeekString()
+  const lastWeekStr = getLastWeekString()
   const currentWeekStr = getCurrentWeekString()
 
   const [lastLogs, thisLogs] = await Promise.all([
@@ -187,13 +236,21 @@ export async function loadCompliance(scope, scopeId, streamName) {
     fetchLogsForWeek(currentWeekStr, streamName),
   ])
 
-  const lastRows    = computeCompliance(leaders, lastWeekStr, lastLogs)
-  const thisRows    = computeCompliance(leaders, currentWeekStr, thisLogs)
+  const lastRows = computeCompliance(leaders, lastWeekStr, lastLogs)
+  const thisRows = computeCompliance(leaders, currentWeekStr, thisLogs)
 
   return {
     leaders,
-    lastWeek:  { weekStr: lastWeekStr,    rows: lastRows,  summary: rollUp(lastRows) },
-    thisWeek:  { weekStr: currentWeekStr, rows: thisRows,  summary: rollUp(thisRows) },
+    lastWeek: {
+      weekStr: lastWeekStr,
+      rows: lastRows,
+      summary: rollUp(lastRows),
+    },
+    thisWeek: {
+      weekStr: currentWeekStr,
+      rows: thisRows,
+      summary: rollUp(thisRows),
+    },
   }
 }
 
@@ -204,7 +261,7 @@ export async function loadLeaderCompliance(userId, streamName) {
   const leader = await fetchLeaderById(userId)
   if (!leader) throw new Error(`Leader ${userId} not found`)
 
-  const lastWeekStr    = getLastWeekString()
+  const lastWeekStr = getLastWeekString()
   const currentWeekStr = getCurrentWeekString()
 
   const [lastLogs, thisLogs] = await Promise.all([
@@ -213,11 +270,15 @@ export async function loadLeaderCompliance(userId, streamName) {
   ])
 
   function buildDetail(weekStr, logs) {
-    const logSet = new Set(logs.map((l) => `${l.submitted_by_id}::${l.activity_id}`))
-    const logMap  = {}
-    logs.filter((l) => l.submitted_by_id === userId).forEach((l) => {
-      logMap[l.activity_id] = l
-    })
+    const logSet = new Set(
+      logs.map((l) => `${l.submitted_by_id}::${l.activity_id}`),
+    )
+    const logMap = {}
+    logs
+      .filter((l) => l.submitted_by_id === userId)
+      .forEach((l) => {
+        logMap[l.activity_id] = l
+      })
 
     const expectedIds = getExpectedActivityIds(leader.level, weekStr)
 
@@ -226,7 +287,9 @@ export async function loadLeaderCompliance(userId, streamName) {
     const cycleWeek = getCycleWeekForMonday(monday)
     const normLevel = leader.level === 'bishop' ? 'overseer' : leader.level
 
-    const allActivities = ACTIVITIES.filter((a) => a.appliesTo.includes(normLevel))
+    const allActivities = ACTIVITIES.filter((a) =>
+      a.appliesTo.includes(normLevel),
+    )
 
     const rows = allActivities.map((activity) => {
       const isExpected = expectedIds.includes(activity.id)
@@ -244,14 +307,20 @@ export async function loadLeaderCompliance(userId, streamName) {
 
     const expected = rows.filter((r) => r.isExpected)
     const filed = expected.filter((r) => r.status === 'filed')
-    const pct = expected.length ? Math.round((filed.length / expected.length) * 100) : 100
+    const pct = expected.length
+      ? Math.round((filed.length / expected.length) * 100)
+      : 100
 
-    return { weekStr, rows, summary: { expected: expected.length, filled: filed.length, pct } }
+    return {
+      weekStr,
+      rows,
+      summary: { expected: expected.length, filled: filed.length, pct },
+    }
   }
 
   return {
     leader,
-    lastWeek:  buildDetail(lastWeekStr, lastLogs),
-    thisWeek:  buildDetail(currentWeekStr, thisLogs),
+    lastWeek: buildDetail(lastWeekStr, lastLogs),
+    thisWeek: buildDetail(currentWeekStr, thisLogs),
   }
 }

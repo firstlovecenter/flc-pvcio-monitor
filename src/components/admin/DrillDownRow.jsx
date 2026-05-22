@@ -15,7 +15,15 @@ import { complianceStatus } from '../../utils/compliance'
  * @param {string}   href       — path to navigate to on tap
  * @param {boolean}  inProgress — show "In progress" badge instead of label
  */
-export default function DrillDownRow({ title, subtitle, pct, filled, total, href, inProgress = false }) {
+export default function DrillDownRow({
+  title,
+  subtitle,
+  pct,
+  filled,
+  total,
+  href,
+  inProgress = false,
+}) {
   const navigate = useNavigate()
   const { label, color } = complianceStatus(pct)
 
@@ -24,12 +32,17 @@ export default function DrillDownRow({ title, subtitle, pct, filled, total, href
       onClick={() => navigate(href)}
       className='w-full text-left flex items-center gap-3 px-4 py-3 transition-colors'
       style={{ background: 'transparent' }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')
+      }
       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
     >
       {/* Text block */}
       <div className='flex-1 min-w-0'>
-        <p className='text-sm font-semibold truncate' style={{ color: 'var(--text)' }}>
+        <p
+          className='text-sm font-semibold truncate'
+          style={{ color: 'var(--text)' }}
+        >
           {title}
         </p>
         {subtitle && (
@@ -38,7 +51,13 @@ export default function DrillDownRow({ title, subtitle, pct, filled, total, href
           </p>
         )}
         <div className='mt-2'>
-          <ComplianceBar pct={pct} filled={filled} total={total} showLabel={false} size='sm' />
+          <ComplianceBar
+            pct={pct}
+            filled={filled}
+            total={total}
+            showLabel={false}
+            size='sm'
+          />
         </div>
       </div>
 
@@ -47,7 +66,10 @@ export default function DrillDownRow({ title, subtitle, pct, filled, total, href
         <span className='text-sm font-bold tabular-nums' style={{ color }}>
           {pct}%
         </span>
-        <span className='text-xs' style={{ color: inProgress ? 'var(--muted)' : color }}>
+        <span
+          className='text-xs'
+          style={{ color: inProgress ? 'var(--muted)' : color }}
+        >
           {inProgress ? 'In progress' : label}
         </span>
       </div>
@@ -60,7 +82,13 @@ export default function DrillDownRow({ title, subtitle, pct, filled, total, href
         fill='none'
         style={{ color: 'var(--muted)', flexShrink: 0 }}
       >
-        <path d='M6 3l5 5-5 5' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' />
+        <path
+          d='M6 3l5 5-5 5'
+          stroke='currentColor'
+          strokeWidth='1.5'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+        />
       </svg>
     </button>
   )

@@ -38,19 +38,32 @@ export default function AdminTopBar({ title, showBack = true, backHref }) {
           aria-label='Back'
         >
           <svg width='20' height='20' viewBox='0 0 20 20' fill='none'>
-            <path d='M12 5l-5 5 5 5' stroke='currentColor' strokeWidth='1.8' strokeLinecap='round' strokeLinejoin='round' />
+            <path
+              d='M12 5l-5 5 5 5'
+              stroke='currentColor'
+              strokeWidth='1.8'
+              strokeLinecap='round'
+              strokeLinejoin='round'
+            />
           </svg>
         </button>
       )}
 
-      <h1 className='flex-1 text-base font-semibold truncate' style={{ color: 'var(--text)' }}>
+      <h1
+        className='flex-1 text-base font-semibold truncate'
+        style={{ color: 'var(--text)' }}
+      >
         {title}
       </h1>
 
       <button
         onClick={handleLogout}
         className='text-xs px-2.5 py-1.5 rounded-lg shrink-0'
-        style={{ background: 'var(--bg2)', color: 'var(--muted)', border: '1px solid var(--border)' }}
+        style={{
+          background: 'var(--bg2)',
+          color: 'var(--muted)',
+          border: '1px solid var(--border)',
+        }}
       >
         Sign out
       </button>

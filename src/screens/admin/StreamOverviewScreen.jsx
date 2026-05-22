@@ -30,7 +30,7 @@ export default function StreamOverviewScreen() {
   const stream = MOCK_STREAMS.find((s) => s.id === streamId)
   const councils = MOCK_COUNCILS.filter((c) => c.streamId === streamId)
 
-  const lastWeekStr    = getLastWeekString()
+  const lastWeekStr = getLastWeekString()
   const currentWeekStr = getCurrentWeekString()
 
   useEffect(() => {
@@ -61,11 +61,12 @@ export default function StreamOverviewScreen() {
           }
         })
 
-        if (!cancelled) setData({
-          lastSummary: rollUp(lastRows),
-          thisSummary: rollUp(thisRows),
-          councils: councilStats,
-        })
+        if (!cancelled)
+          setData({
+            lastSummary: rollUp(lastRows),
+            thisSummary: rollUp(thisRows),
+            councils: councilStats,
+          })
       } catch (err) {
         if (!cancelled) setError(err.message || 'Failed to load')
       } finally {
@@ -74,15 +75,27 @@ export default function StreamOverviewScreen() {
     }
 
     load()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [streamId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeWeekStr = week === 'last' ? lastWeekStr : currentWeekStr
-  const summary = data ? (week === 'last' ? data.lastSummary : data.thisSummary) : null
+  const summary = data
+    ? week === 'last'
+      ? data.lastSummary
+      : data.thisSummary
+    : null
 
   return (
-    <div className='min-h-dvh' style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-      <AdminTopBar title={`${stream?.name ?? 'Stream'} Stream`} backHref='/admin/dashboard' />
+    <div
+      className='min-h-dvh'
+      style={{ background: 'var(--bg)', color: 'var(--text)' }}
+    >
+      <AdminTopBar
+        title={`${stream?.name ?? 'Stream'} Stream`}
+        backHref='/admin/dashboard'
+      />
 
       <div className='px-4 pt-4 pb-8'>
         {/* Week toggle */}
@@ -95,8 +108,13 @@ export default function StreamOverviewScreen() {
 
         {/* Stream summary */}
         {summary && (
-          <div className='rounded-2xl p-4 mb-5'
-            style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
+          <div
+            className='rounded-2xl p-4 mb-5'
+            style={{
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+            }}
+          >
             <p className='text-xs mb-2' style={{ color: 'var(--muted)' }}>
               {summary.filled}/{summary.total} filled across all councils
             </p>
@@ -105,32 +123,59 @@ export default function StreamOverviewScreen() {
         )}
 
         {error && (
-          <p className='text-xs rounded-lg px-3 py-2 mb-4'
-            style={{ background: 'rgba(248,112,96,.12)', color: '#F87060' }}>
+          <p
+            className='text-xs rounded-lg px-3 py-2 mb-4'
+            style={{ background: 'rgba(248,112,96,.12)', color: '#F87060' }}
+          >
             {error}
           </p>
         )}
 
-        <p className='text-xs font-semibold uppercase tracking-widest mb-2'
-          style={{ color: 'var(--muted)' }}>
+        <p
+          className='text-xs font-semibold uppercase tracking-widest mb-2'
+          style={{ color: 'var(--muted)' }}
+        >
           By Council
         </p>
 
-        <div className='rounded-2xl overflow-hidden'
-          style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
+        <div
+          className='rounded-2xl overflow-hidden'
+          style={{
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+          }}
+        >
           {loading
             ? Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className='px-4 py-4 animate-pulse'
-                  style={{ borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
-                  <div className='h-3 rounded w-1/2 mb-2' style={{ background: 'var(--border)' }} />
-                  <div className='h-2 rounded w-3/4' style={{ background: 'var(--border)' }} />
+                <div
+                  key={i}
+                  className='px-4 py-4 animate-pulse'
+                  style={{
+                    borderBottom: i < 2 ? '1px solid var(--border)' : 'none',
+                  }}
+                >
+                  <div
+                    className='h-3 rounded w-1/2 mb-2'
+                    style={{ background: 'var(--border)' }}
+                  />
+                  <div
+                    className='h-2 rounded w-3/4'
+                    style={{ background: 'var(--border)' }}
+                  />
                 </div>
               ))
             : data?.councils.map(({ council, last, this: curr }, i) => {
                 const d = week === 'last' ? last : curr
                 return (
-                  <div key={council.id}
-                    style={{ borderBottom: i < data.councils.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <div
+                    key={council.id}
+                    style={{
+                      borderBottom:
+                        i < data.councils.length - 1
+                          ? '1px solid var(--border)'
+                          : 'none',
+                    }}
+                  >
                     <DrillDownRow
                       title={council.name}
                       subtitle={council.overseerName}
@@ -142,8 +187,7 @@ export default function StreamOverviewScreen() {
                     />
                   </div>
                 )
-              })
-          }
+              })}
         </div>
       </div>
     </div>
