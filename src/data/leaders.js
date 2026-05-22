@@ -14,10 +14,12 @@
 // ── Streams ───────────────────────────────────────────────────────────────────
 
 export const MOCK_STREAMS = [
-  { id: 'stream-col', name: 'Colossians' },
-  { id: 'stream-eph', name: 'Ephesians' },
-  { id: 'stream-gal', name: 'Galatians' },
-  { id: 'stream-php', name: 'Philippians' },
+  { id: '2dd77486-5d8d-4231-96e9-6d042500198a', name: 'Colossians' },
+  { id: '65251f91-ef1e-44fc-925f-debfcd0152fd', name: 'Ephesians' },
+  { id: '2d0f5804-0462-442f-93cc-25db95912589', name: 'Galatians' },
+  { id: '2533c137-4850-49af-8cd6-669e4d325603', name: 'Philippians' },
+  { id: '804e3aaf-e868-4772-a9f6-f0de76941d01', name: 'Jesus Night' },
+  { id: '3e3d4b11-5063-4a85-97da-d4ddc61cafab', name: 'Signs And Wonders HGE' },
 ]
 
 // ── Councils (Overseers) ──────────────────────────────────────────────────────

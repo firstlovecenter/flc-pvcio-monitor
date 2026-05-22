@@ -20,7 +20,7 @@ import neo4j from 'neo4j-driver'
 import { jwtVerify } from 'jose'
 
 const FLC_JWT_SECRET = process.env.FLC_JWT_SECRET!
-const ADMIN_API_KEY  = process.env.ADMIN_API_KEY   // optional — grants read-only admin access
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY // optional — grants read-only admin access
 const NEO4J_URI = process.env.NEO4J_URI!
 const NEO4J_USER = process.env.NEO4J_USER!
 const NEO4J_PASSWORD = process.env.NEO4J_PASSWORD!
