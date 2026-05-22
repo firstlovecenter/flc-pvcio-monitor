@@ -11,11 +11,6 @@ import { startOfISOWeek, subWeeks, getISOWeek, getISOWeekYear } from 'date-fns'
 import { ACTIVITIES } from '../data/activities'
 import { supabase } from './supabase'
 import { runNeo4jQuery } from './neo4j'
-import {
-  getMockLeadersForCouncil,
-  getMockLeadersForGovernorship,
-  getMockLeaderById,
-} from '../data/leaders'
 import { getCycleWeekForMonday, getMondayOfISOWeek } from './timeline'
 
 // ── ISO week helpers ──────────────────────────────────────────────────────────
@@ -79,21 +74,113 @@ export async function fetchLeadersForStream(streamId) {
            s.id      AS streamId,        s.name                        AS streamName,
            c.id      AS councilId,       c.name                        AS councilName,
            g.id      AS governorshipId,  g.name                        AS governorshipName,
-           b.id      AS bacentaId,       coalesce(b.name, b.stream_name) AS bacentaName
+           b.id      AS bacentaId,       b.name AS bacentaName
   `
   return runNeo4jQuery(query, { streamId })
 }
 
 export async function fetchLeadersForCouncil(councilId) {
-  return getMockLeadersForCouncil(councilId)
+  const query = `
+    // ── Overseer ───────────────────────────────────────────────────────────
+    MATCH (c:Council {id: $councilId})<-[:HAS]-(s:Stream)
+    MATCH (u:User:Member)-[:LEADS]->(c)
+    RETURN ${LEADER_FIELDS},
+           'overseer' AS level,
+           s.id AS streamId,   s.name AS streamName,
+           c.id AS councilId,  c.name AS councilName,
+           null AS governorshipId, null AS governorshipName,
+           null AS bacentaId,  null   AS bacentaName
+
+    UNION ALL
+
+    // ── Governors ──────────────────────────────────────────────────────────
+    MATCH (c:Council {id: $councilId})<-[:HAS]-(s:Stream)
+    MATCH (c)-[:HAS]->(g:Governorship)
+    MATCH (u:User:Member)-[:LEADS]->(g)
+    RETURN ${LEADER_FIELDS},
+           'governorship' AS level,
+           s.id AS streamId,        s.name AS streamName,
+           c.id AS councilId,       c.name AS councilName,
+           g.id AS governorshipId,  g.name AS governorshipName,
+           null AS bacentaId,       null   AS bacentaName
+
+    UNION ALL
+
+    // ── Bacenta leaders ────────────────────────────────────────────────────
+    MATCH (c:Council {id: $councilId})<-[:HAS]-(s:Stream)
+    MATCH (c)-[:HAS]->(g:Governorship)-[:HAS]->(b:Bacenta)
+    MATCH (u:User:Member)-[:LEADS]->(b)
+    RETURN ${LEADER_FIELDS},
+           'bacenta' AS level,
+           s.id AS streamId,        s.name AS streamName,
+           c.id AS councilId,       c.name AS councilName,
+           g.id AS governorshipId,  g.name AS governorshipName,
+           b.id AS bacentaId,       b.name AS bacentaName
+  `
+  return runNeo4jQuery(query, { councilId })
 }
 
 export async function fetchLeadersForGovernorship(govId) {
-  return getMockLeadersForGovernorship(govId)
+  const query = `
+    // ── Governor ───────────────────────────────────────────────────────────
+    MATCH (g:Governorship {id: $govId})<-[:HAS]-(c:Council)<-[:HAS]-(s:Stream)
+    MATCH (u:User:Member)-[:LEADS]->(g)
+    RETURN ${LEADER_FIELDS},
+           'governorship' AS level,
+           s.id AS streamId,        s.name AS streamName,
+           c.id AS councilId,       c.name AS councilName,
+           g.id AS governorshipId,  g.name AS governorshipName,
+           null AS bacentaId,       null   AS bacentaName
+
+    UNION ALL
+
+    // ── Bacenta leaders ────────────────────────────────────────────────────
+    MATCH (g:Governorship {id: $govId})<-[:HAS]-(c:Council)<-[:HAS]-(s:Stream)
+    MATCH (g)-[:HAS]->(b:Bacenta)
+    MATCH (u:User:Member)-[:LEADS]->(b)
+    RETURN ${LEADER_FIELDS},
+           'bacenta' AS level,
+           s.id AS streamId,        s.name AS streamName,
+           c.id AS councilId,       c.name AS councilName,
+           g.id AS governorshipId,  g.name AS governorshipName,
+           b.id AS bacentaId,       b.name AS bacentaName
+  `
+  return runNeo4jQuery(query, { govId })
 }
 
 export async function fetchLeaderById(userId) {
-  return getMockLeaderById(userId)
+  // Tries each leadership level in order — bacenta first, then governorship,
+  // then council (overseer). Returns the first match found.
+  const query = `
+    MATCH (u:User:Member {id: $userId})
+
+    OPTIONAL MATCH (u)-[:LEADS]->(b:Bacenta)<-[:HAS]-(g:Governorship)
+                                             <-[:HAS]-(c:Council)
+                                             <-[:HAS]-(s:Stream)
+
+    OPTIONAL MATCH (u)-[:LEADS]->(g2:Governorship)<-[:HAS]-(c2:Council)
+                                                   <-[:HAS]-(s2:Stream)
+
+    OPTIONAL MATCH (u)-[:LEADS]->(c3:Council)<-[:HAS]-(s3:Stream)
+
+    RETURN ${LEADER_FIELDS},
+           CASE
+             WHEN b  IS NOT NULL THEN 'bacenta'
+             WHEN g2 IS NOT NULL THEN 'governorship'
+             WHEN c3 IS NOT NULL THEN 'overseer'
+           END AS level,
+           coalesce(s.id,   s2.id,   s3.id)   AS streamId,
+           coalesce(s.name, s2.name, s3.name) AS streamName,
+           coalesce(c.id,   c2.id,   c3.id)   AS councilId,
+           coalesce(c.name, c2.name, c3.name) AS councilName,
+           coalesce(g.id,   g2.id)            AS governorshipId,
+           coalesce(g.name, g2.name)          AS governorshipName,
+           b.id   AS bacentaId,
+           b.name AS bacentaName
+    LIMIT 1
+  `
+  const rows = await runNeo4jQuery(query, { userId })
+  return rows[0] ?? null
 }
 
 // ── Expected activities ───────────────────────────────────────────────────────

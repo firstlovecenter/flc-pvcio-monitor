@@ -79,7 +79,6 @@ export default function PhotoField({ field, value, onChange }) {
         ref={inputRef}
         type='file'
         accept='image/*'
-        capture='environment'
         className='hidden'
         onChange={handleFile}
       />
