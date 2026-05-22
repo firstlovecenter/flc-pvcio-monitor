@@ -293,6 +293,20 @@ export function rollUp(rows) {
   return { total, filled, missing, pct }
 }
 
+/**
+ * Roll up compliance rows by leader headcount.
+ * A leader is "compliant" when all their expected activities are filed.
+ * @param {object[]} rows — compliance rows from computeCompliance
+ * @returns {{ compliant, total, pct, defaulters }}
+ */
+export function rollUpLeaders(rows) {
+  const total = rows.length
+  const compliant = rows.filter((r) => r.compliant).length
+  const defaulters = rows.filter((r) => !r.compliant)
+  const pct = total ? Math.round((compliant / total) * 100) : 100
+  return { compliant, total, pct, defaulters }
+}
+
 // ── Status label + colour ─────────────────────────────────────────────────────
 
 export function complianceStatus(pct) {

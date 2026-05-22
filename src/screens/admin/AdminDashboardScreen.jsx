@@ -10,7 +10,7 @@ import WeekToggle from '../../components/admin/WeekToggle'
 import {
   fetchLeadersForStream,
   computeCompliance,
-  rollUp,
+  rollUpLeaders,
   fetchLogsForWeek,
   getLastWeekString,
   getCurrentWeekString,
@@ -54,8 +54,8 @@ export default function AdminDashboardScreen() {
 
             return {
               stream,
-              last: rollUp(lastRows),
-              this: rollUp(thisRows),
+              last: rollUpLeaders(lastRows),
+              this: rollUpLeaders(thisRows),
             }
           }),
         )
@@ -153,7 +153,7 @@ export default function AdminDashboardScreen() {
                       className='text-xs mb-3'
                       style={{ color: 'var(--muted)' }}
                     >
-                      {data.filled}/{data.total}
+                      {data.compliant}/{data.total} leaders up to date
                     </p>
                     <ComplianceBar pct={data.pct} showLabel={false} size='sm' />
                     <p

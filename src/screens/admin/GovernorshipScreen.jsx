@@ -8,22 +8,15 @@ import AdminTopBar from '../../components/admin/AdminTopBar'
 import ComplianceBar from '../../components/admin/ComplianceBar'
 import DrillDownRow from '../../components/admin/DrillDownRow'
 import WeekToggle from '../../components/admin/WeekToggle'
-import { complianceStatus } from '../../utils/compliance'
+import { complianceStatus, rollUpLeaders } from '../../utils/compliance'
 import {
   fetchLeadersForGovernorship,
   computeCompliance,
-  rollUp,
   fetchLogsForWeek,
   getLastWeekString,
   getCurrentWeekString,
 } from '../../utils/compliance'
 import { weekLabel } from '../../utils/timeline'
-import {
-  MOCK_GOVERNORSHIPS,
-  MOCK_COUNCILS,
-  MOCK_STREAMS,
-  MOCK_BACENTAS,
-} from '../../data/leaders'
 
 export default function GovernorshipScreen() {
   const { govId } = useParams()
@@ -32,19 +25,12 @@ export default function GovernorshipScreen() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-
-  const gov = MOCK_GOVERNORSHIPS.find((g) => g.id === govId)
-  const council = gov ? MOCK_COUNCILS.find((c) => c.id === gov.councilId) : null
-  const stream = council
-    ? MOCK_STREAMS.find((s) => s.id === council.streamId)
-    : null
-  const bacentas = MOCK_BACENTAS.filter((b) => b.governorshipId === govId)
+  const [meta, setMeta] = useState(null) // { govName, councilId, councilName }
 
   const lastWeekStr = getLastWeekString()
   const currentWeekStr = getCurrentWeekString()
 
   useEffect(() => {
-    if (!gov || !stream) return
     let cancelled = false
 
     async function load() {
@@ -52,6 +38,14 @@ export default function GovernorshipScreen() {
       setError('')
       try {
         const leaders = await fetchLeadersForGovernorship(govId)
+        if (!cancelled && leaders.length) {
+          const first = leaders.find((l) => l.governorshipId) ?? leaders[0]
+          setMeta({
+            govName: first.governorshipName,
+            councilId: first.councilId,
+            councilName: first.councilName,
+          })
+        }
         const leaderIds = leaders.map((l) => l.userId)
         const [lastLogs, thisLogs] = await Promise.all([
           fetchLogsForWeek(lastWeekStr, leaderIds),
@@ -61,14 +55,26 @@ export default function GovernorshipScreen() {
         const lastRows = computeCompliance(leaders, lastWeekStr, lastLogs)
         const thisRows = computeCompliance(leaders, currentWeekStr, thisLogs)
 
-        // Separate governor row from bacenta rows
-        const govLastRow = lastRows.find((r) => r.userId === gov.governorUserId)
-        const govThisRow = thisRows.find((r) => r.userId === gov.governorUserId)
+        // Governor is the leader whose level is 'governorship'
+        const governor = leaders.find((l) => l.level === 'governorship')
+        const govLastRow = lastRows.find((r) => r.userId === governor?.userId)
+        const govThisRow = thisRows.find((r) => r.userId === governor?.userId)
 
-        const bacStats = bacentas.map((bac) => {
-          const bLast = lastRows.find((r) => r.userId === bac.leaderUserId)
-          const bThis = thisRows.find((r) => r.userId === bac.leaderUserId)
-          return { bac, last: bLast, this: bThis }
+        // Bacentas — all leaders with level 'bacenta'
+        const bacentaLeaders = leaders.filter((l) => l.level === 'bacenta')
+        const bacStats = bacentaLeaders.map((bac) => {
+          const bLast = lastRows.find((r) => r.userId === bac.userId)
+          const bThis = thisRows.find((r) => r.userId === bac.userId)
+          return {
+            bac: {
+              id: bac.bacentaId,
+              name: bac.bacentaName,
+              leaderName: bac.fullName,
+              leaderUserId: bac.userId,
+            },
+            last: bLast,
+            this: bThis,
+          }
         })
 
         if (!cancelled)
@@ -76,6 +82,7 @@ export default function GovernorshipScreen() {
             lastSummary: rollUp(lastRows),
             thisSummary: rollUp(thisRows),
             govRow: { last: govLastRow, this: govThisRow },
+            governor,
             bacentas: bacStats,
           })
       } catch (err) {
@@ -141,8 +148,8 @@ export default function GovernorshipScreen() {
       style={{ background: 'var(--bg)', color: 'var(--text)' }}
     >
       <AdminTopBar
-        title={gov ? `${gov.name} Governorship` : 'Governorship'}
-        backHref={council ? `/admin/council/${council.id}` : '/admin/dashboard'}
+        title={meta ? `${meta.govName} Governorship` : 'Governorship'}
+        backHref={meta?.councilId ? `/admin/council/${meta.councilId}` : '/admin/dashboard'}
       />
 
       <div className='px-4 pt-4 pb-8'>
@@ -162,7 +169,7 @@ export default function GovernorshipScreen() {
             }}
           >
             <p className='text-xs mb-2' style={{ color: 'var(--muted)' }}>
-              {summary.filled}/{summary.total} filled across governorship
+              {summary.compliant}/{summary.total} leaders up to date
             </p>
             <ComplianceBar pct={summary.pct} size='md' />
           </div>
@@ -188,8 +195,8 @@ export default function GovernorshipScreen() {
             </p>
             <LeaderCard
               row={week === 'last' ? data.govRow.last : data.govRow.this}
-              name={gov.governorName}
-              href={`/admin/leader/${gov.governorUserId}`}
+              name={data.governor?.fullName ?? 'Governor'}
+              href={`/admin/leader/${data.governor?.userId}`}
             />
           </>
         )}
@@ -254,6 +261,51 @@ export default function GovernorshipScreen() {
                 )
               })}
         </div>
+
+        {/* Defaulters */}
+        {!loading && (() => {
+          const defaulters = []
+          // Add governor if defaulting
+          if (data?.govRow) {
+            const gr = week === 'last' ? data.govRow.last : data.govRow.this
+            if (gr && !gr.compliant) defaulters.push({ name: data.governor?.fullName ?? 'Governor', role: 'Governor', userId: data.governor?.userId })
+          }
+          // Add bacenta leaders who are defaulting
+          data?.bacentas?.forEach(({ bac, last, this: curr }) => {
+            const row = week === 'last' ? last : curr
+            if (row && !row.compliant) defaulters.push({ name: bac.leaderName, role: bac.name, userId: bac.leaderUserId })
+          })
+          if (!defaulters.length) return null
+          return (
+            <>
+              <p
+                className='text-xs font-semibold uppercase tracking-widest mt-6 mb-2'
+                style={{ color: '#F87060' }}
+              >
+                Not yet filed ({defaulters.length})
+              </p>
+              <div
+                className='rounded-2xl overflow-hidden'
+                style={{ background: 'var(--card)', border: '1px solid rgba(248,112,96,.3)' }}
+              >
+                {defaulters.map((d, i) => (
+                  <button
+                    key={d.userId}
+                    onClick={() => navigate(`/admin/leader/${d.userId}`)}
+                    className='w-full text-left flex items-center justify-between px-4 py-3'
+                    style={{ borderBottom: i < defaulters.length - 1 ? '1px solid var(--border)' : 'none' }}
+                  >
+                    <div>
+                      <p className='text-sm font-medium' style={{ color: 'var(--text)' }}>{d.name}</p>
+                      <p className='text-xs' style={{ color: 'var(--muted)' }}>{d.role}</p>
+                    </div>
+                    <span className='text-xs font-semibold' style={{ color: '#F87060' }}>Behind →</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )
+        })()}
       </div>
     </div>
   )
