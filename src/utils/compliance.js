@@ -10,7 +10,7 @@
 import { startOfISOWeek, subWeeks, getISOWeek, getISOWeekYear } from 'date-fns'
 import { ACTIVITIES } from '../data/activities'
 import { supabase } from './supabase'
-import { runNeo4jQuery } from './neo4j'
+import { adminRunNeo4jQuery } from './neo4j'
 import { getCycleWeekForMonday, getMondayOfISOWeek } from './timeline'
 
 // ── ISO week helpers ──────────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ export async function fetchLeadersForStream(streamId) {
            g.id      AS governorshipId,  g.name                        AS governorshipName,
            b.id      AS bacentaId,       b.name AS bacentaName
   `
-  return runNeo4jQuery(query, { streamId })
+  return adminRunNeo4jQuery(query, { streamId })
 }
 
 export async function fetchLeadersForCouncil(councilId) {
@@ -117,7 +117,7 @@ export async function fetchLeadersForCouncil(councilId) {
            g.id AS governorshipId,  g.name AS governorshipName,
            b.id AS bacentaId,       b.name AS bacentaName
   `
-  return runNeo4jQuery(query, { councilId })
+  return adminRunNeo4jQuery(query, { councilId })
 }
 
 export async function fetchLeadersForGovernorship(govId) {
@@ -145,7 +145,7 @@ export async function fetchLeadersForGovernorship(govId) {
            g.id AS governorshipId,  g.name AS governorshipName,
            b.id AS bacentaId,       b.name AS bacentaName
   `
-  return runNeo4jQuery(query, { govId })
+  return adminRunNeo4jQuery(query, { govId })
 }
 
 export async function fetchLeaderById(userId) {
@@ -179,7 +179,7 @@ export async function fetchLeaderById(userId) {
            b.name AS bacentaName
     LIMIT 1
   `
-  const rows = await runNeo4jQuery(query, { userId })
+  const rows = await adminRunNeo4jQuery(query, { userId })
   return rows[0] ?? null
 }
 
@@ -220,15 +220,21 @@ export function getExpectedActivityIds(level, weekStr) {
 // ── Supabase log fetch ────────────────────────────────────────────────────────
 
 /**
- * Returns all activity log rows for the given ISO week and stream.
+ * Returns all activity log rows for the given ISO week filed by any of
+ * the given leader IDs.
  * Each row: { submitted_by_id, activity_id, submitted_by_name, submitted_at }
+ *
+ * Note: filters by submitted_by_id rather than stream_name because
+ * stream_name is not reliably populated in older log rows.
  */
-export async function fetchLogsForWeek(weekStr, streamName) {
+export async function fetchLogsForWeek(weekStr, leaderIds) {
+  if (!leaderIds?.length) return []
+
   const { data, error } = await supabase
     .from('activity_logs')
     .select('submitted_by_id, activity_id, submitted_by_name, submitted_at')
     .eq('iso_week', weekStr)
-    .eq('stream_name', streamName)
+    .in('submitted_by_id', leaderIds)
     .eq('type', 'activity')
 
   if (error) throw error
@@ -305,11 +311,10 @@ export function complianceStatus(pct) {
  *
  * @param {'stream'|'council'|'governorship'} scope
  * @param {string} scopeId
- * @param {string} streamName  — needed for the Supabase query filter
  * @returns {{ leaders, lastWeek: { weekStr, rows, summary },
  *             thisWeek: { weekStr, rows, summary } }}
  */
-export async function loadCompliance(scope, scopeId, streamName) {
+export async function loadCompliance(scope, scopeId) {
   let leaders
   if (scope === 'stream') leaders = await fetchLeadersForStream(scopeId)
   else if (scope === 'council') leaders = await fetchLeadersForCouncil(scopeId)
@@ -318,9 +323,10 @@ export async function loadCompliance(scope, scopeId, streamName) {
   const lastWeekStr = getLastWeekString()
   const currentWeekStr = getCurrentWeekString()
 
+  const leaderIds = leaders.map((l) => l.userId)
   const [lastLogs, thisLogs] = await Promise.all([
-    fetchLogsForWeek(lastWeekStr, streamName),
-    fetchLogsForWeek(currentWeekStr, streamName),
+    fetchLogsForWeek(lastWeekStr, leaderIds),
+    fetchLogsForWeek(currentWeekStr, leaderIds),
   ])
 
   const lastRows = computeCompliance(leaders, lastWeekStr, lastLogs)
@@ -344,7 +350,7 @@ export async function loadCompliance(scope, scopeId, streamName) {
 /**
  * Fetch + compute compliance for a single leader in both weeks.
  */
-export async function loadLeaderCompliance(userId, streamName) {
+export async function loadLeaderCompliance(userId) {
   const leader = await fetchLeaderById(userId)
   if (!leader) throw new Error(`Leader ${userId} not found`)
 
@@ -352,8 +358,8 @@ export async function loadLeaderCompliance(userId, streamName) {
   const currentWeekStr = getCurrentWeekString()
 
   const [lastLogs, thisLogs] = await Promise.all([
-    fetchLogsForWeek(lastWeekStr, streamName),
-    fetchLogsForWeek(currentWeekStr, streamName),
+    fetchLogsForWeek(lastWeekStr, [leader.userId]),
+    fetchLogsForWeek(currentWeekStr, [leader.userId]),
   ])
 
   function buildDetail(weekStr, logs) {

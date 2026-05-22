@@ -42,8 +42,30 @@ export async function runNeo4jQuery(query, parameters = {}) {
   if (!res.ok)
     throw new Error(json?.error || `neo4j-query failed (${res.status})`)
 
-  // Bolt driver response: each record is a plain object keyed by RETURN aliases
-  // e.g. [ { member: {...}, membership: {...} }, ... ]
+  return json.data ?? []
+}
+
+/**
+ * Admin variant — authenticates with VITE_ADMIN_API_KEY instead of a user JWT.
+ * Used by the compliance dashboard which has no FLC token.
+ */
+export async function adminRunNeo4jQuery(query, parameters = {}) {
+  const key = import.meta.env.VITE_ADMIN_API_KEY
+  if (!key) throw new Error('VITE_ADMIN_API_KEY is not set')
+
+  const res = await fetch(NEO4J_FN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({ query, parameters }),
+  })
+
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok)
+    throw new Error(json?.error || `neo4j-query (admin) failed (${res.status})`)
+
   return json.data ?? []
 }
 

@@ -20,6 +20,7 @@ import neo4j from 'neo4j-driver'
 import { jwtVerify } from 'jose'
 
 const FLC_JWT_SECRET = process.env.FLC_JWT_SECRET!
+const ADMIN_API_KEY  = process.env.ADMIN_API_KEY   // optional — grants read-only admin access
 const NEO4J_URI = process.env.NEO4J_URI!
 const NEO4J_USER = process.env.NEO4J_USER!
 const NEO4J_PASSWORD = process.env.NEO4J_PASSWORD!
@@ -39,7 +40,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST')
     return res.status(405).json({ error: 'Method not allowed' })
 
-  // ── 1. Verify FLC JWT ──────────────────────────────────────────────
+  // ── 1. Verify caller identity ────────────────────────────────────────
+  // Accepts either a valid FLC JWT  OR  the ADMIN_API_KEY (admin dashboard).
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) {
     return res
@@ -48,14 +50,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const token = authHeader.slice(7)
 
+  // Fast path: admin API key (no JWT verification needed)
+  const isAdminKey = ADMIN_API_KEY && token === ADMIN_API_KEY
+
   let userId: string
-  try {
-    const secret = new TextEncoder().encode(FLC_JWT_SECRET)
-    const { payload } = await jwtVerify(token, secret)
-    userId = payload.userId as string
-    if (!userId) throw new Error('missing userId')
-  } catch {
-    return res.status(401).json({ error: 'Invalid or expired JWT' })
+  if (!isAdminKey) {
+    try {
+      const secret = new TextEncoder().encode(FLC_JWT_SECRET)
+      const { payload } = await jwtVerify(token, secret)
+      userId = payload.userId as string
+      if (!userId) throw new Error('missing userId')
+    } catch {
+      return res.status(401).json({ error: 'Invalid or expired JWT' })
+    }
+  } else {
+    userId = 'admin'
   }
 
   // ── 2. Validate body ───────────────────────────────────────────────
