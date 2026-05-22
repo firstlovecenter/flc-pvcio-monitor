@@ -39,9 +39,10 @@ export default function AdminDashboardScreen() {
         const results = await Promise.all(
           MOCK_STREAMS.map(async (stream) => {
             const leaders = await fetchLeadersForStream(stream.id)
+            const leaderIds = leaders.map((l) => l.userId)
             const [lastLogs, thisLogs] = await Promise.all([
-              fetchLogsForWeek(lastWeekStr, stream.name),
-              fetchLogsForWeek(currentWeekStr, stream.name),
+              fetchLogsForWeek(lastWeekStr, leaderIds),
+              fetchLogsForWeek(currentWeekStr, leaderIds),
             ])
 
             const lastRows = computeCompliance(leaders, lastWeekStr, lastLogs)

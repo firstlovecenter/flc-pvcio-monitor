@@ -75,11 +75,32 @@ Deno.serve(async (req: Request) => {
     // Do not trust the client-supplied value — overwrite with the JWT userId.
     row.submitted_by_id = userId
 
-    // ── 4. Insert via service role (bypasses RLS) ────────────────────
+    // ── 4. Duplicate guard ───────────────────────────────────────────
+    // If a log already exists for the same user + activity + date, return
+    // the existing row instead of inserting a duplicate.
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: { persistSession: false },
     })
 
+    if (row.activity_id && row.activity_date) {
+      const { data: existing } = await supabase
+        .from('activity_logs')
+        .select()
+        .eq('submitted_by_id', userId)
+        .eq('activity_id', row.activity_id as string)
+        .eq('activity_date', row.activity_date as string)
+        .eq('type', 'activity')
+        .maybeSingle()
+
+      if (existing) {
+        return new Response(JSON.stringify(existing), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+    }
+
+    // ── 5. Insert via service role (bypasses RLS) ────────────────────
     const { data, error } = await supabase
       .from('activity_logs')
       .insert(row)

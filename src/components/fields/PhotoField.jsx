@@ -7,8 +7,7 @@ export default function PhotoField({ field, value, onChange }) {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) =>
-      onChange({ dataUrl: ev.target.result, name: file.name, file })
+    reader.onload = (ev) => onChange({ dataUrl: ev.target.result, name: file.name, file })
     reader.readAsDataURL(file)
   }
 
@@ -20,10 +19,7 @@ export default function PhotoField({ field, value, onChange }) {
 
   return (
     <div className='flex flex-col gap-2'>
-      <label
-        className='text-xs font-semibold tracking-widest uppercase'
-        style={{ color: 'var(--muted)' }}
-      >
+      <label className='text-xs font-semibold tracking-widest uppercase' style={{ color: 'var(--muted)' }}>
         {field.label}
       </label>
 
@@ -43,8 +39,7 @@ export default function PhotoField({ field, value, onChange }) {
             onClick={handleClear}
             className='absolute top-2 right-2 flex items-center justify-center rounded-full text-xs font-bold cursor-pointer'
             style={{
-              width: 28,
-              height: 28,
+              width: 28, height: 28,
               background: 'rgba(0,0,0,0.6)',
               color: '#fff',
               border: '1px solid rgba(255,255,255,0.2)',
@@ -65,19 +60,12 @@ export default function PhotoField({ field, value, onChange }) {
         >
           <div
             className='flex items-center justify-center rounded-xl text-2xl flex-shrink-0'
-            style={{
-              width: 48,
-              height: 48,
-              background: 'rgba(79,127,255,0.12)',
-            }}
+            style={{ width: 48, height: 48, background: 'rgba(79,127,255,0.12)' }}
           >
             📷
           </div>
           <div>
-            <p
-              className='m-0 text-sm font-semibold'
-              style={{ color: 'var(--text)' }}
-            >
+            <p className='m-0 text-sm font-semibold' style={{ color: 'var(--text)' }}>
               Add a photo
             </p>
             <p className='m-0 text-xs mt-0.5' style={{ color: 'var(--muted)' }}>

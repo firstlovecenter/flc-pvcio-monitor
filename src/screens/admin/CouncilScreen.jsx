@@ -48,9 +48,10 @@ export default function CouncilScreen() {
       setError('')
       try {
         const leaders = await fetchLeadersForCouncil(councilId)
+        const leaderIds = leaders.map((l) => l.userId)
         const [lastLogs, thisLogs] = await Promise.all([
-          fetchLogsForWeek(lastWeekStr, stream.name),
-          fetchLogsForWeek(currentWeekStr, stream.name),
+          fetchLogsForWeek(lastWeekStr, leaderIds),
+          fetchLogsForWeek(currentWeekStr, leaderIds),
         ])
 
         const lastRows = computeCompliance(leaders, lastWeekStr, lastLogs)
