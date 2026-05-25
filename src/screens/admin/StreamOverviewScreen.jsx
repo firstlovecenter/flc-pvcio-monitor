@@ -12,7 +12,7 @@ import {
   fetchLeadersForStream,
   computeCompliance,
   rollUpLeaders,
-  fetchLogsForWeek,
+  adminFetchLogsForWeek,
   getLastWeekString,
   getCurrentWeekString,
 } from '../../utils/compliance'
@@ -43,8 +43,8 @@ export default function StreamOverviewScreen() {
         const leaders = await fetchLeadersForStream(streamId)
         const leaderIds = leaders.map((l) => l.userId)
         const [lastLogs, thisLogs] = await Promise.all([
-          fetchLogsForWeek(lastWeekStr, leaderIds),
-          fetchLogsForWeek(currentWeekStr, leaderIds),
+          adminFetchLogsForWeek(lastWeekStr, leaderIds),
+          adminFetchLogsForWeek(currentWeekStr, leaderIds),
         ])
 
         const lastRows = computeCompliance(leaders, lastWeekStr, lastLogs)

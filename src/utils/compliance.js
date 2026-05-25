@@ -241,6 +241,38 @@ export async function fetchLogsForWeek(weekStr, leaderIds) {
   return data ?? []
 }
 
+/**
+ * Admin version of fetchLogsForWeek — calls the admin-fetch-logs edge function
+ * which uses the Supabase service role key to bypass RLS.
+ * Use this in all admin screens instead of fetchLogsForWeek.
+ */
+export async function adminFetchLogsForWeek(weekStr, leaderIds) {
+  if (!leaderIds?.length) return []
+
+  const adminKey = import.meta.env.VITE_ADMIN_API_KEY
+  if (!adminKey) throw new Error('VITE_ADMIN_API_KEY is not set')
+
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-fetch-logs`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${adminKey}`,
+    },
+    body: JSON.stringify({ weekStr, leaderIds }),
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }))
+    throw new Error(
+      err.error || `admin-fetch-logs failed with status ${res.status}`,
+    )
+  }
+
+  const { data } = await res.json()
+  return data ?? []
+}
+
 // ── Cross-reference ───────────────────────────────────────────────────────────
 
 /**
@@ -339,8 +371,8 @@ export async function loadCompliance(scope, scopeId) {
 
   const leaderIds = leaders.map((l) => l.userId)
   const [lastLogs, thisLogs] = await Promise.all([
-    fetchLogsForWeek(lastWeekStr, leaderIds),
-    fetchLogsForWeek(currentWeekStr, leaderIds),
+    adminFetchLogsForWeek(lastWeekStr, leaderIds),
+    adminFetchLogsForWeek(currentWeekStr, leaderIds),
   ])
 
   const lastRows = computeCompliance(leaders, lastWeekStr, lastLogs)
@@ -351,12 +383,12 @@ export async function loadCompliance(scope, scopeId) {
     lastWeek: {
       weekStr: lastWeekStr,
       rows: lastRows,
-      summary: rollUp(lastRows),
+      summary: rollUpLeaders(lastRows),
     },
     thisWeek: {
       weekStr: currentWeekStr,
       rows: thisRows,
-      summary: rollUp(thisRows),
+      summary: rollUpLeaders(thisRows),
     },
   }
 }
@@ -372,8 +404,8 @@ export async function loadLeaderCompliance(userId) {
   const currentWeekStr = getCurrentWeekString()
 
   const [lastLogs, thisLogs] = await Promise.all([
-    fetchLogsForWeek(lastWeekStr, [leader.userId]),
-    fetchLogsForWeek(currentWeekStr, [leader.userId]),
+    adminFetchLogsForWeek(lastWeekStr, [leader.userId]),
+    adminFetchLogsForWeek(currentWeekStr, [leader.userId]),
   ])
 
   function buildDetail(weekStr, logs) {
