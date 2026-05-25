@@ -14,6 +14,7 @@ import { complianceStatus } from '../../utils/compliance'
  * @param {number}   total      — expected count
  * @param {string}   href       — path to navigate to on tap
  * @param {boolean}  inProgress — show "In progress" badge instead of label
+ * @param {string}   countLabel — label after the count (default: 'leaders up to date')
  */
 export default function DrillDownRow({
   title,
@@ -23,6 +24,7 @@ export default function DrillDownRow({
   total,
   href,
   inProgress = false,
+  countLabel,
 }) {
   const navigate = useNavigate()
   const { label, color } = complianceStatus(pct)
@@ -57,6 +59,7 @@ export default function DrillDownRow({
             total={total}
             showLabel={false}
             size='sm'
+            countLabel={countLabel}
           />
         </div>
       </div>

@@ -134,6 +134,7 @@ export default function GovernorshipScreen() {
           total={row.expected}
           showLabel={false}
           size='sm'
+          countLabel='activities filed'
         />
         <p className='text-xs mt-1' style={{ color }}>
           {week === 'this' ? 'In progress' : label}
@@ -260,6 +261,7 @@ export default function GovernorshipScreen() {
                       total={row.expected}
                       href={`/admin/leader/${bac.leaderUserId}`}
                       inProgress={week === 'this'}
+                      countLabel='activities filed'
                     />
                   </div>
                 )
