@@ -264,7 +264,9 @@ export async function adminFetchLogsForWeek(weekStr, leaderIds) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw new Error(err.error || `admin-fetch-logs failed with status ${res.status}`)
+    throw new Error(
+      err.error || `admin-fetch-logs failed with status ${res.status}`,
+    )
   }
 
   const { data } = await res.json()
